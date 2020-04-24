@@ -17,8 +17,8 @@ about: 'about.html'
     </nav>
     <div class="vertical">
         <div class="main-header-content inner">
-            <h1 class="page-title">{{ site.name }}</h1>
-            <h2 class="page-description">
+            <h1 class="page-title" style="text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;">{{ site.name }}</h1>
+            <h2 class="page-description" style="text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;">
                 {% if site.description %} {{ site.description }}. {% endif %}
                 {% if page.about %} <a href='{{ site.baseurl }}{{ page.about }}'> About me </a> {% endif %}
             </h2>
