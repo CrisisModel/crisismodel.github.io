@@ -238,7 +238,7 @@ a {
 }
 
 a:hover {
-    color: #111;
+    color: #aac7f4;
 }
 
 p, ul, ol, dl {
@@ -646,7 +646,7 @@ margin on the iframe, cause it breaks stuff. */
 }
 
 .main-nav.overlay a:hover {
-    color: #222;
+    color: #aac7f4;
     border-color: #fff;
     background: #fff;
     transition: all 0.1s ease;
