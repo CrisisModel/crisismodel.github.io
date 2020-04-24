@@ -4,7 +4,7 @@ meta_description: "This is Autumn's word dump"
 
 markdown: kramdown
 highlighter: rogue
-logo: false
+logo: 'https://words.crisismodel.com/assets/images/logo.png'
 paginate: 15
 baseurl: /
 domain_name: 'https://words.crisismodel.com'
@@ -13,6 +13,3 @@ gems: [jekyll-paginate]
 # Details for the RSS feed generator
 url:            'https://words.crisismodel.com'
 author:         'Autumn Tera'
-baseurl:        'https://words.crisismodel.com/'
-logo:           'https://words.crisismodel.com/assets/images/logo.png'
-cover:          'https://i.picsum.photos/id/1063/4867/3215.jpg'
