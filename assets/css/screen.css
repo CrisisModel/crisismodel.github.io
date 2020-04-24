@@ -233,7 +233,7 @@ h6 {
 }
 
 a {
-    color: #4A4A4A;
+    color: #7fa6e2;
     transition: color ease 0.3s;
 }
 
@@ -764,7 +764,7 @@ body:not(.post-template) .post-title {
 
 .post-meta {
     display: block;
-    margin: 1.75rem 0 0 0;
+    margin: 1.75rem 0 1.5rem 0;
     font-family: "Open Sans", sans-serif;
     font-size: 1.5rem;
     line-height: 2.2rem;
@@ -1483,6 +1483,16 @@ body:not(.post-template) .post-title {
 
     .blog-logo img {
         height: 26px;
+    }
+    
+    .blog-logo-pages {
+        padding: 10px 10px;
+    }
+    
+    .blog-logo-pages img {
+        height: 26px;
+        margin: 4em auto;
+        display: block;
     }
 
     .back-button,
