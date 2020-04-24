@@ -3,7 +3,7 @@ description: Words written by Autumn Tera
 meta_description: "This is Autumn's word dump"
 
 markdown: kramdown
-highlighter: rogue
+highlighter: rouge
 logo: 'https://words.crisismodel.com/assets/images/logo.png'
 paginate: 15
 baseurl: 'https://words.crisismodel.com/'
