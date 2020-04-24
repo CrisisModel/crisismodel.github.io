@@ -14,3 +14,4 @@ gems: [jekyll-paginate]
 url:            'https://words.crisismodel.com'
 author:         'Autumn Tera'
 baseurl:        'https://words.crisismodel.com/'
+logo:           'assets/images/logo.png'
