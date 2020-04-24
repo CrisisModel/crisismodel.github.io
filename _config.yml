@@ -1,6 +1,6 @@
 name: CrisisModel - Words
-description: Words written by Autumn.
-meta_description: "This is Autumn's word dump."
+description: Words written by Autumn
+meta_description: "This is Autumn's word dump"
 
 markdown: kramdown
 highlighter: pygments
@@ -12,4 +12,4 @@ gems: [jekyll-paginate]
 
 # Details for the RSS feed generator
 url:            'https://words.crisismodel.com'
-author:         'Autumn Boyhan'
+author:         'Autumn Tera'
