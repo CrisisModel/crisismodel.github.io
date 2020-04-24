@@ -1,4 +1,9 @@
+---
+layout: post
 title:  "Inspiration for other trans folks."
+date:   2019-12-07 12:00:00
+categories: personal trans
+---
 
 *By request, here's a public version of a toot I wrote as a reply to someone asking for encouragement. I hope this can help encourage you, too.*
 

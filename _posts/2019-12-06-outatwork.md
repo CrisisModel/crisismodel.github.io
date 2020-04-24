@@ -1,4 +1,9 @@
+---
+layout: post
 title:  "From 2014: I came out at work."
+date:   2019-12-06 12:00:00
+categories: personal trans
+---
 
 *NOTE: Chelsea wrote this back in 2014. A lot has changed since then, so keep this in mind. This is the entirety of the tumblr post she wrote back then; nothing was changed or edited.*
 
