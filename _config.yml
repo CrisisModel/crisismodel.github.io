@@ -6,8 +6,8 @@ markdown: kramdown
 highlighter: rogue
 logo: 'https://words.crisismodel.com/assets/images/logo.png'
 paginate: 15
-baseurl: /
-domain_name: 'https://words.crisismodel.com'
+baseurl: 'https://words.crisismodel.com/'
+domain_name: 'https://words.crisismodel.com/'
 gems: [jekyll-paginate]
 
 # Details for the RSS feed generator
