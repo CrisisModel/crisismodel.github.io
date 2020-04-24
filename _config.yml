@@ -8,7 +8,7 @@ logo: 'https://words.crisismodel.com/assets/images/logo.png'
 paginate: 15
 baseurl: 'https://words.crisismodel.com/'
 domain_name: 'https://words.crisismodel.com/'
-gems: [jekyll-paginate]
+plugins: [jekyll-paginate]
 
 # Details for the RSS feed generator
 url:            'https://words.crisismodel.com'
