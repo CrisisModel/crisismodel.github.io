@@ -3,7 +3,7 @@ description: Words written by Autumn Tera
 meta_description: "This is Autumn's word dump"
 
 markdown: kramdown
-highlighter: pygments
+highlighter: rogue
 logo: false
 paginate: 15
 baseurl: /
