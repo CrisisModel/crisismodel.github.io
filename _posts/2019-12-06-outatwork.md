@@ -1,8 +1,8 @@
+title:  "From 2014: I came out at work."
+
 *NOTE: Chelsea wrote this back in 2014. A lot has changed since then, so keep this in mind. This is the entirety of the tumblr post she wrote back then; nothing was changed or edited.*
 
 ---
-
-# I came out at work.
 
 It was the work week beginning on Monday, January 6th. The new year was rather unremarkable thus far. It had gotten to the point in my transition where I could no longer continue pretending to be someone I wasn’t while at work; people constantly calling me “sir,” or he/him/his, etc. That week, my dysphoria had turned into a horrible monster, the fiercest it had ever been since before beginning HRT. I was falling apart; my panic attacks were getting worse every day and I grew tired of my constant fear of interacting with others. I reached my breaking point. Actually, I ended up going beyond my breaking point. I woke up on Thursday morning, January 9th, crying hysterically. The crying lasted for about two hours. I was done. I couldn’t do this anymore. I ended up taking the day off from work because there was no way I could do it all over again that day.
 

@@ -1,3 +1,5 @@
+title:  "Inspiration for other trans folks."
+
 *By request, here's a public version of a toot I wrote as a reply to someone asking for encouragement. I hope this can help encourage you, too.*
 
 ---
