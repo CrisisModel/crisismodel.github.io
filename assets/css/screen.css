@@ -847,7 +847,7 @@ body:not(.post-template) .post-title {
    ========================================================================== */
 
 .post-template .post-header {
-   margin: 3.4rem auto;
+   margin: 0 auto;
 }
 
 .post-template .post-title {
@@ -1552,7 +1552,7 @@ body:not(.post-template) .post-title {
     }
 
     .post-template .post-header {
-        margin: 2rem auto;
+        margin: 0 auto;
     }
 
     .post-template .post-date {

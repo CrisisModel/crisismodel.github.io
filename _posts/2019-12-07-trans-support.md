@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Inspiration for other trans folks."
+title:  "Encouragement for other trans folks."
 date:   2019-12-07 12:00:00
 categories: personal trans
 ---
