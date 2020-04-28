@@ -1,8 +1,8 @@
 ---
 layout: post
-title:  Dance Gavin Dance, Afterburner - My thoughts on "Say Hi" pt. 1
+title:  Dance Gavin Dance, Afterburner - Thoughts on "Say Hi" pt. 1
 date: 2020-04-28 11:16:30
-categories: music "dance gavin dance" afterburner
+categories: music dgd afterburner
 ---
 
 If you know me, you’re probably aware that I’m obsessed with **Dance Gavin Dance**; they are my most favorite band of all time. I believe that everything they’ve released (at least in the _Tilian_ era) has been complete gold. They are absolutely brilliant.
