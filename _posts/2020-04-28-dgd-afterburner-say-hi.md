@@ -12,7 +12,7 @@ Their new album, _Afterburner_, dropped on April 24th, 2020. I’m still absorbi
 I’m just going to give my thoughts on some of the lyrics featured in this album. In this post, I’ll cover a section of the song _Say Hi_.
 
 
-## “Say Hi”
+### “Say Hi”
 
 [Invidious link](https://invidio.us/watch?v=SlQfFZ82mNM)
 
