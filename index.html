@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#2c2137">
-    <title>Pixel Feast Quest: Chain Reactions</title>
+    <title>Pixel Feast Quest: Fixed Chains</title>
     
     <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -38,7 +38,6 @@
             gap: 15px;
         }
 
-        /* --- UI PANEL --- */
         .ui-panel {
             background: var(--grid-bg);
             border: 4px solid var(--border-light);
@@ -84,7 +83,6 @@
             transition: width 0.3s ease-out;
         }
 
-        /* --- MASTERY GRID --- */
         .mastery-section {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -111,15 +109,9 @@
             position: relative;
         }
         
-        .m-bar-fill {
-            height: 100%;
-            background: #d46eb3;
-            width: 0%;
-        }
-        
+        .m-bar-fill { height: 100%; background: #d46eb3; width: 0%; }
         .m-lvl { color: #ffff00; font-size: 6px; position: absolute; top: -8px; right: 0; }
 
-        /* --- GAME BOARD --- */
         .game-board {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
@@ -152,7 +144,6 @@
             position: relative;
         }
 
-        /* --- POWER UP STYLES --- */
         .tile.power-taco { background-color: #ff7e47 !important; box-shadow: inset 0 0 10px #7a1c00; border: 2px solid #ffcc00; }
         .tile.power-sushi { background-color: #ffd700 !important; box-shadow: inset 0 0 10px #8b6914; animation: pulse-gold 1s infinite; }
         .tile.power-bread { background-color: #d4a373 !important; box-shadow: inset 0 0 10px #8b4513; border: 2px solid #fff; }
@@ -168,12 +159,10 @@
             .tile { font-size: calc(min(90vh, 50vw) / 8 * 0.6); }
         }
 
-        /* --- ANIMATIONS --- */
         .tile.selected { background-color: var(--accent); animation: pulse 1s infinite; z-index: 2; }
         .pop-anim { animation: explode 0.3s forwards cubic-bezier(0.25, 1, 0.5, 1); }
         .drop-anim { animation: fallDown 0.5s ease-out; z-index: 5; }
         .shuffle-anim { animation: spin 0.5s ease-in-out; }
-        
         .hint-anim {
             z-index: 3;
             box-shadow: inset 0 0 0 4px #fff, 0 0 15px #fff !important;
@@ -184,7 +173,6 @@
             0% { transform: scale(0.95); filter: brightness(1.2); }
             100% { transform: scale(1.05); filter: brightness(1.5); }
         }
-
         @keyframes pulse { 0% { box-shadow: inset 0 0 0 0px var(--border-light); } 50% { box-shadow: inset 0 0 0 4px var(--border-light); } 100% { box-shadow: inset 0 0 0 0px var(--border-light); } }
         @keyframes pulse-gold { 0% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.05); filter: brightness(1.2); } 100% { transform: scale(1); filter: brightness(1); } }
         @keyframes explode { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.8; } 100% { transform: scale(0); opacity: 0; } }
@@ -293,7 +281,9 @@
                 for (let i = 0; i < width * width; i++) {
                     const square = document.createElement('div');
                     square.classList.add('tile'); square.setAttribute('id', `tile-${i}`);
-                    square.addEventListener('pointerdown', (e) => { AudioSys.init(); e.preventDefault(); handleInput(i); });
+                    square.addEventListener('pointerdown', (e) => { 
+                        AudioSys.init(); e.preventDefault(); handleInput(i); 
+                    });
                     gridElement.appendChild(square);
                 }
             }
@@ -348,20 +338,25 @@
             const tile1 = gridState[idx1]; const tile2 = gridState[idx2];
             AudioSys.play('select');
             
+            // --- POWER UP ACTIVATION ---
             if (tile1.power || tile2.power) {
+                // Determine initial Swap Direction
                 let swapDir = Math.abs(idx1 - idx2) === 1 ? 'horz' : 'vert';
+                
+                // Swap state
                 gridState[idx1] = tile2; gridState[idx2] = tile1; updateVisuals();
                 
                 let exploded = new Set();
-                let detonated = new Set(); // Prevent infinite loops in chains
+                let detonated = new Set(); // Tracks powerups that have fired to prevent loops
                 
-                // Pass swapDir. If tile1 is Taco, it uses swapDir. If tile2 is Taco, it uses swapDir.
-                if (tile1.power) collectExplosion(idx2, tile1, tile2, exploded, detonated, swapDir);
-                if (tile2.power) collectExplosion(idx1, tile2, tile1, exploded, detonated, swapDir);
+                // Trigger both involved tiles
+                if (tile1.power) triggerPowerUp(idx2, tile1, tile2, exploded, detonated, swapDir);
+                if (tile2.power) triggerPowerUp(idx1, tile2, tile1, exploded, detonated, swapDir);
                 
                 AudioSys.play('powerup'); runClearSequence(Array.from(exploded)); return;
             }
 
+            // Normal Match Logic
             gridState[idx1] = tile2; gridState[idx2] = tile1; updateVisuals();
             setTimeout(() => {
                 const matchResult = findMatches(gridState);
@@ -373,54 +368,65 @@
             }, 200);
         }
 
-        // --- FIXED CHAIN REACTION LOGIC ---
-        function collectExplosion(originIdx, powerTile, targetTile, set, detonated, direction) {
-            // Stop if this specific tile has already fired its payload
-            if (detonated.has(originIdx)) return;
+        // --- ROBUST CHAIN REACTION ENGINE ---
+        function triggerPowerUp(originIdx, powerTile, targetTile, set, detonated, direction) {
+            if (detonated.has(originIdx)) return; // Prevent double firing
             detonated.add(originIdx);
-            
-            // Mark self for clearing
-            set.add(originIdx);
-            
+            set.add(originIdx); // Mark self for clearing
+
             const r = Math.floor(originIdx / width);
             const c = originIdx % width;
             let dir = direction || 'horz';
 
+            // 1. TACO: Directional Blast
             if (powerTile.power === 'taco') {
                 if (dir === 'vert') {
-                    for(let i=c; i<width*width; i+=width) checkCascade(i, set, detonated, 'vert');
+                    // Vertical Blast (Column)
+                    for(let i=c; i<width*width; i+=width) checkChainHit(i, set, detonated, 'vert');
                 } else {
-                    for(let i=r*width; i<(r+1)*width; i++) checkCascade(i, set, detonated, 'horz');
+                    // Horizontal Blast (Row)
+                    for(let i=r*width; i<(r+1)*width; i++) checkChainHit(i, set, detonated, 'horz');
                 }
-            } else if (powerTile.power === 'bread') {
-                for(let i=r*width; i<(r+1)*width; i++) checkCascade(i, set, detonated, 'horz');
-                for(let i=c; i<width*width; i+=width) checkCascade(i, set, detonated, 'vert');
-            } else if (powerTile.power === 'sushi') {
+            } 
+            // 2. BREAD: Cross Blast
+            else if (powerTile.power === 'bread') {
+                for(let i=r*width; i<(r+1)*width; i++) checkChainHit(i, set, detonated, 'horz');
+                for(let i=c; i<width*width; i+=width) checkChainHit(i, set, detonated, 'vert');
+            } 
+            // 3. CAKE (Sushi): Color Wipe
+            else if (powerTile.power === 'sushi') { // 'sushi' is the internal ID for Cake
                 let targetFood = targetTile.food;
-                if (!targetFood && targetTile.power) targetFood = getRandomFood(); 
+                // If Cake is hit by a blast (no swap target), pick a random existing food
+                if (!targetFood) {
+                    let candidates = gridState.filter(t => t && t.food).map(t => t.food);
+                    if(candidates.length > 0) targetFood = candidates[Math.floor(Math.random() * candidates.length)];
+                }
                 
-                for(let i=0; i<width*width; i++) { 
-                    if(gridState[i] && gridState[i].food === targetFood) checkCascade(i, set, detonated, 'horz'); 
+                if(targetFood) {
+                    for(let i=0; i<width*width; i++) { 
+                        if(gridState[i] && gridState[i].food === targetFood) checkChainHit(i, set, detonated, 'horz'); 
+                    }
                 }
             }
         }
 
-        function checkCascade(idx, set, detonated, incomingDir) {
-            // Always mark for clearing
-            set.add(idx);
-            
+        function checkChainHit(idx, set, detonated, incomingDir) {
+            if(set.has(idx)) return; // Already cleared
             if(!gridState[idx]) return;
             
-            // If it's a powerup, trigger it immediately!
+            set.add(idx); // Clear this tile
+            
+            // If the hit tile is ALSO a powerup, chain it!
             if (gridState[idx].power) {
                 let nextDir = incomingDir;
-                // If Taco gets hit, it explodes PERPENDICULAR to the hit
+                // If we hit a TACO, we FLIP the direction (Perpendicular Chain)
                 if (gridState[idx].power === 'taco') {
                     nextDir = (incomingDir === 'horz') ? 'vert' : 'horz';
                 }
+                // If hitting a CAKE/BREAD, incomingDir doesn't strictly matter as they handle it, but we pass it anyway
                 
-                let dummyTarget = { food: null, power: true };
-                collectExplosion(idx, gridState[idx], dummyTarget, set, detonated, nextDir);
+                // Recursively fire the hit powerup
+                triggerPowerUp(idx, gridState[idx], { food: null }, set, detonated, nextDir);
             }
         }
 
