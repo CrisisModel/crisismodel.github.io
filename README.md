@@ -1,1 +1,0 @@
-The Jekyll theme is a modified version of [Kasper](https://github.com/rosario/kasper).
