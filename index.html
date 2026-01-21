@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#2c2137">
-    <title>Pixel Feast: Time Attack</title>
+    <title>Pixel Feast: Patch</title>
     
     <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -18,7 +18,6 @@
             --border-dark: #3f3f74;
             --accent: #d46eb3;
             --xp-bar: #5ac54f;
-            --time-bar: #4da6ff;
             --text-color: #ffffff;
         }
 
@@ -35,23 +34,19 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 15px;
+            justify-content: flex-start;
+            padding-top: 10px;
+            box-sizing: border-box;
+            gap: 10px;
         }
 
-        /* --- UI PANEL --- */
-        .ui-panel {
-            background: var(--grid-bg);
-            border: 4px solid var(--border-light);
-            box-shadow: 4px 4px 0px var(--border-dark);
-            padding: 10px;
-            box-sizing: border-box;
-            z-index: 10;
-            width: min(90vw, 600px);
-            flex-shrink: 0; 
-            display: none; /* Hidden by default for menu */
+        .header-bar {
+            width: min(95vw, 600px);
+            display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 5px;
+            z-index: 10;
+            flex-shrink: 0;
         }
 
         .header-top-row {
@@ -75,32 +70,29 @@
             color: #fff;
             font-family: 'Press Start 2P', cursive;
             font-size: 10px;
-            padding: 10px 15px;
+            padding: 8px 12px;
             cursor: pointer;
             text-transform: uppercase;
             box-shadow: 4px 4px 0px #000;
-            transition: transform 0.1s;
         }
         .btn-pixel:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #000; }
-        .btn-pixel:hover { background: #515194; }
 
-        .bar-container {
+        .xp-container {
             background: #000;
             border: 2px solid #fff;
             height: 12px;
             width: 100%;
             position: relative;
         }
-        .bar-fill {
+        .xp-fill {
             background-color: var(--xp-bar);
             height: 100%;
             width: 0%;
-            transition: width 0.3s linear;
+            transition: width 0.3s ease-out;
         }
 
-        /* --- GAME BOARD --- */
         .game-board {
-            display: none; /* Hidden by default */
+            display: grid;
             grid-template-columns: repeat(8, 1fr);
             grid-template-rows: repeat(8, 1fr);
             gap: 2px;
@@ -131,65 +123,41 @@
             position: relative;
         }
 
-        /* --- MENUS & OVERLAYS --- */
-        .overlay-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+        /* --- MENUS --- */
+        #main-menu {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg-color);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            gap: 20px;
-            text-align: center;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 200; gap: 20px; text-align: center;
         }
+        .title-text { font-size: clamp(20px, 5vw, 40px); color: var(--accent); text-shadow: 4px 4px #000; margin-bottom: 20px; }
+        .menu-btn-container { display: flex; flex-direction: column; gap: 15px; }
 
-        .title-text {
-            font-size: clamp(20px, 5vw, 40px);
-            color: var(--accent);
-            text-shadow: 4px 4px #000;
-            margin-bottom: 20px;
-            line-height: 1.5;
+        #modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none; justify-content: center; align-items: center;
+            z-index: 100; backdrop-filter: blur(2px);
         }
-
-        .menu-btn-container {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
         .modal-content {
-            background: var(--grid-bg);
-            border: 4px solid var(--border-light);
-            box-shadow: 8px 8px 0px #000;
-            padding: 20px;
-            width: min(85vw, 400px);
-            text-align: center;
-            position: relative;
+            background: var(--grid-bg); border: 4px solid var(--border-light);
+            box-shadow: 8px 8px 0px #000; padding: 20px;
+            width: min(85vw, 400px); text-align: center;
         }
-
-        /* --- MASTERY --- */
-        .mastery-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
-            text-align: left;
-        }
+        .mastery-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px; text-align: left; }
         .mastery-item { display: flex; align-items: center; gap: 10px; font-size: 12px; }
         .m-bar-container { flex-grow: 1; height: 10px; background: #333; border: 2px solid #555; position: relative; }
         .m-bar-fill { height: 100%; background: #d46eb3; width: 0%; }
         .m-lvl { color: #ffff00; font-size: 10px; position: absolute; top: -14px; right: 0; }
 
-        /* --- STYLES --- */
         .tile.power-taco { background-color: #ff7e47 !important; box-shadow: inset 0 0 10px #7a1c00; border: 2px solid #ffcc00; }
         .tile.power-sushi { background-color: #ffd700 !important; box-shadow: inset 0 0 10px #8b6914; animation: pulse-gold 1s infinite; }
         .tile.power-bread { background-color: #d4a373 !important; box-shadow: inset 0 0 10px #8b4513; border: 2px solid #fff; }
 
         @media (min-aspect-ratio: 1/1) and (min-width: 600px) {
-            body { flex-direction: row; justify-content: center; align-items: center; gap: 40px; }
-            .ui-panel { width: 250px; height: auto; display: flex; } /* Flex handled by JS toggle */
+            body { flex-direction: row; justify-content: center; align-items: center; gap: 40px; padding-top: 0; }
+            .header-bar { width: 250px; height: auto; }
             .game-board { width: min(90vh, 50vw); height: min(90vh, 50vw); font-size: calc(min(90vh, 50vw) / 8 * 0.6); }
             .tile { font-size: calc(min(90vh, 50vw) / 8 * 0.6); }
         }
@@ -210,13 +178,21 @@
 
         .floater { position: absolute; color: #ffff00; font-size: clamp(10px, 2vw, 20px); font-weight: bold; pointer-events: none; animation: floatUp 1s forwards; text-shadow: 2px 2px 0 #000; z-index: 100; white-space: nowrap; }
         #console-log { font-size: clamp(8px, 2vw, 10px); color: #8b9bb4; min-height: 1.5em; text-align: center; margin-top: 5px; }
-        #shuffle-msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: #fff; padding: 20px; border: 2px solid var(--border-light); display: none; z-index: 20; font-size: clamp(12px, 3vw, 16px); text-align: center; pointer-events: none; }
         
-        #modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index:200; }
+        #shuffle-msg { 
+            position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            background: rgba(0,0,0,0.9); 
+            color: #fff; padding: 20px; 
+            border: 4px solid var(--border-light); 
+            display: none; z-index: 500; /* High Z-Index */
+            font-size: clamp(14px, 4vw, 20px); 
+            text-align: center; pointer-events: none; 
+            box-shadow: 0 0 20px #000;
+        }
     </style>
 </head>
 <body>
-
     <div id="main-menu" class="overlay-screen">
         <div class="title-text">PIXEL FEAST<br>QUEST</div>
         <div class="menu-btn-container">
@@ -225,7 +201,7 @@
         </div>
     </div>
 
-    <div class="ui-panel" id="ui-panel">
+    <div class="header-bar">
         <div class="header-top-row">
             <div class="stats-area">
                 <div><span class="stat-label">LVL:</span> <span id="level-display">1</span></div>
@@ -233,9 +209,7 @@
             </div>
             <button class="btn-pixel" id="stats-btn">STATS</button>
         </div>
-        <div class="bar-container">
-            <div class="bar-fill" id="bar-fill"></div>
-        </div>
+        <div class="xp-container"><div class="xp-fill" id="bar-fill"></div></div>
         <div id="console-log">Tap to start...</div>
     </div>
     
@@ -260,7 +234,6 @@
     <script>
         if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(err => {}); }); }
 
-        // --- AUDIO ---
         const AudioSys = {
             ctx: null,
             init: function() { if (!this.ctx) { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } if (this.ctx.state === 'suspended') { this.ctx.resume(); } },
@@ -277,7 +250,6 @@
             playNote: function(freq, time, dur) { const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain(); osc.connect(gain); gain.connect(this.ctx.destination); osc.type = 'square'; osc.frequency.setValueAtTime(freq, time); gain.gain.setValueAtTime(0.1, time); gain.gain.exponentialRampToValueAtTime(0.01, time + dur); osc.start(time); osc.stop(time + dur); }
         };
 
-        // --- GAME VARIABLES ---
         const width = 8;
         const candyColors = ['🍔', '🍕', '🍪', '🍩', '🍟', '🍗'];
         let gridState = [];
@@ -285,115 +257,61 @@
         let masteryData = {};
         let selectedTileIndex = null; let isLocked = false; let lastSwapIndex = -1;
         let hintTimeout = null; const HINT_DELAY = 6000;
-        
-        // Mode Variables
-        let gameMode = 'RPG'; // 'RPG' or 'TIME'
-        let timeRemaining = 120; // seconds
-        let timeInterval = null;
+        let gameMode = 'RPG'; let timeRemaining = 120; let timeInterval = null;
 
         const gridElement = document.getElementById('grid');
         const masteryGridElement = document.getElementById('mastery-grid');
         const modalOverlay = document.getElementById('modal-overlay');
         const mainMenu = document.getElementById('main-menu');
-        const uiPanel = document.getElementById('ui-panel');
 
         document.addEventListener('DOMContentLoaded', () => { 
-            // Modal Logic
-            document.getElementById('stats-btn').addEventListener('click', () => {
-                showMasteryModal();
-                AudioSys.play('select');
-            });
-            document.getElementById('close-modal-btn').addEventListener('click', () => {
-                modalOverlay.style.display = 'none';
-                AudioSys.play('select');
-            });
+            document.getElementById('stats-btn').addEventListener('click', () => { showMasteryModal(); AudioSys.play('select'); });
+            document.getElementById('close-modal-btn').addEventListener('click', () => { modalOverlay.style.display = 'none'; AudioSys.play('select'); });
         });
 
         function startGame(mode) {
-            AudioSys.init();
-            AudioSys.play('select');
-            gameMode = mode;
-            
-            // UI Setup
+            AudioSys.init(); AudioSys.play('select'); gameMode = mode;
             mainMenu.style.display = 'none';
-            uiPanel.style.display = 'flex';
-            gridElement.style.display = 'grid';
-            
-            // Reset Stats
             score = 0; level = 1; currentXP = 0; xpToNextLevel = 100;
-            masteryData = {};
-            candyColors.forEach(food => { masteryData[food] = { level: 1, current: 0, max: 20 }; });
-            
-            // Mode Specifics
-            if (mode === 'TIME') {
-                timeRemaining = 120;
-                document.getElementById('bar-fill').style.backgroundColor = '#4da6ff'; // Blue bar
-                startTimer();
-            } else {
-                document.getElementById('bar-fill').style.backgroundColor = '#5ac54f'; // Green bar
-            }
-
-            initBoard();
-            updateUI();
+            masteryData = {}; candyColors.forEach(food => { masteryData[food] = { level: 1, current: 0, max: 20 }; });
+            if (mode === 'TIME') { timeRemaining = 120; document.getElementById('bar-fill').style.backgroundColor = '#4da6ff'; startTimer(); } 
+            else { document.getElementById('bar-fill').style.backgroundColor = '#5ac54f'; }
+            initBoard(); updateUI();
         }
 
         function startTimer() {
             clearInterval(timeInterval);
             timeInterval = setInterval(() => {
                 timeRemaining--;
-                if (timeRemaining <= 0) {
-                    endGame();
-                }
+                if (timeRemaining <= 0) endGame();
                 updateUI();
             }, 1000);
         }
 
         function endGame() {
-            clearInterval(timeInterval);
-            isLocked = true;
-            AudioSys.play('invalid'); // Buzzer
-            
-            // Show Game Over Modal
+            clearInterval(timeInterval); isLocked = true; AudioSys.play('invalid');
             document.getElementById('modal-title').innerText = "TIME'S UP!";
             document.getElementById('mastery-grid').style.display = 'none';
             document.getElementById('game-over-content').style.display = 'block';
             document.getElementById('close-modal-btn').style.display = 'none';
             document.getElementById('final-score').innerText = score;
-            
             modalOverlay.style.display = 'flex';
         }
 
         function returnToMenu() {
-            AudioSys.play('select');
-            modalOverlay.style.display = 'none';
-            uiPanel.style.display = 'none';
-            gridElement.style.display = 'none';
-            mainMenu.style.display = 'flex';
-            
-            // Reset Modal State for next time
+            AudioSys.play('select'); modalOverlay.style.display = 'none'; mainMenu.style.display = 'flex';
             document.getElementById('mastery-grid').style.display = 'grid';
             document.getElementById('game-over-content').style.display = 'none';
             document.getElementById('close-modal-btn').style.display = 'inline-block';
             document.getElementById('modal-title').innerText = "FOOD MASTERY";
         }
 
-        function showMasteryModal() {
-            renderMasteryUI();
-            document.getElementById('modal-title').innerText = "FOOD MASTERY";
-            document.getElementById('mastery-grid').style.display = 'grid';
-            document.getElementById('game-over-content').style.display = 'none';
-            document.getElementById('close-modal-btn').style.display = 'inline-block';
-            modalOverlay.style.display = 'flex';
-        }
+        function showMasteryModal() { renderMasteryUI(); document.getElementById('modal-title').innerText = "FOOD MASTERY"; document.getElementById('mastery-grid').style.display = 'grid'; document.getElementById('game-over-content').style.display = 'none'; document.getElementById('close-modal-btn').style.display = 'inline-block'; modalOverlay.style.display = 'flex'; }
 
         function initBoard() {
-            gridState = [];
-            for (let i = 0; i < width * width; i++) gridState.push(createNewTile());
+            gridState = []; for (let i = 0; i < width * width; i++) gridState.push(createNewTile());
             let settling = true;
-            while(settling) {
-                if (findMatches(gridState).indices.length > 0) { gridState = gridState.map(() => createNewTile()); } 
-                else { settling = false; }
-            }
+            while(settling) { if (findMatches(gridState).indices.length > 0) { gridState = gridState.map(() => createNewTile()); } else { settling = false; } }
             renderBoard();
             if (!hasPossibleMoves()) shuffleBoard();
             else resetHintTimer();
@@ -425,17 +343,11 @@
         function renderMasteryUI() {
             masteryGridElement.innerHTML = '';
             candyColors.forEach(food => {
-                const m = masteryData[food];
-                const item = document.createElement('div');
-                item.className = 'mastery-item';
+                const m = masteryData[food]; const item = document.createElement('div'); item.className = 'mastery-item';
                 let pct = Math.min(100, (m.current / m.max) * 100);
                 item.innerHTML = `<span class="m-icon">${food}</span><div class="m-bar-container"><div class="m-bar-fill" id="m-bar-${food}" style="width:${pct}%"></div><span class="m-lvl" id="m-lvl-${food}">v${m.level}</span></div>`;
                 masteryGridElement.appendChild(item);
             });
-        }
-        function updateMasteryProgress(food) {
-            const m = masteryData[food]; const bar = document.getElementById(`m-bar-${food}`); const lvl = document.getElementById(`m-lvl-${food}`);
-            if(bar && lvl) { let pct = Math.min(100, (m.current / m.max) * 100); bar.style.width = `${pct}%`; lvl.innerText = `v${m.level}`; }
         }
         function handleInput(index) {
             if (isLocked) return;
@@ -463,7 +375,6 @@
                 gridState[idx1] = tile2; gridState[idx2] = tile1; updateVisuals();
                 let exploded = new Set(); let detonated = new Set();
                 
-                // Super Combos & Power Logic
                 if (tile1.power && tile2.power) {
                     AudioSys.play('levelup'); 
                     if (tile1.power === 'sushi' && tile2.power === 'sushi') { for(let i=0; i<width*width; i++) checkChainHit(i, exploded, detonated, swapDir); }
@@ -479,7 +390,6 @@
                         for(let offset=-1; offset<=1; offset++) { let tc = c+offset; if(tc>=0 && tc<width) for(let i=tc; i<width*width; i+=width) checkChainHit(i, exploded, detonated, 'vert'); }
                     }
                     else {
-                        // Star (Bread + Taco)
                         const r = Math.floor(idx2/width); const c = idx2%width;
                         for(let i=r*width; i<(r+1)*width; i++) checkChainHit(i, exploded, detonated, 'horz');
                         for(let i=c; i<width*width; i+=width) checkChainHit(i, exploded, detonated, 'vert');
@@ -510,11 +420,7 @@
             let targets = gridState.filter(t => t.food).map(t => t.food);
             if(targets.length > 0) {
                 let targetFood = targets[Math.floor(Math.random() * targets.length)];
-                for(let i=0; i<width*width; i++) {
-                    if(gridState[i] && gridState[i].food === targetFood) {
-                        gridState[i].power = type;
-                    }
-                }
+                for(let i=0; i<width*width; i++) { if(gridState[i] && gridState[i].food === targetFood) { gridState[i].power = type; } }
                 updateVisuals();
             }
         }
@@ -545,18 +451,6 @@
                 if (gridState[idx].power === 'taco') nextDir = (incomingDir === 'horz') ? 'vert' : 'horz';
                 triggerPowerUp(idx, gridState[idx], { food: null, power: true }, set, detonated, nextDir);
             }
-        }
-
-        function resetHintTimer() { clearTimeout(hintTimeout); clearHints(); if(!isLocked) hintTimeout = setTimeout(showHint, HINT_DELAY); }
-        function stopHintTimer() { clearTimeout(hintTimeout); clearHints(); }
-        function clearHints() { document.querySelectorAll('.tile').forEach(t => t.classList.remove('hint-anim')); }
-        function showHint() {
-            if(isLocked) return;
-            let possibleMoves = [];
-            for (let r=0; r<width; r++) { for (let c=0; c<width-1; c++) { let idx = r*width + c; if(trySwap(idx, idx+1)) possibleMoves.push([idx, idx+1]); } }
-            for (let c=0; c<width; c++) { for (let r=0; r<width-1; r++) { let idx = r*width + c; if(trySwap(idx, idx+width)) possibleMoves.push([idx, idx+width]); } }
-            for(let i=0; i<gridState.length; i++) { if(gridState[i].power) { if (i+1 < width*width && i%width !== 7) possibleMoves.push([i, i+1]); if (i+width < width*width) possibleMoves.push([i, i+width]); } }
-            if (possibleMoves.length > 0) { let move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)]; const tiles = document.querySelectorAll('.tile'); tiles[move[0]].classList.add('hint-anim'); tiles[move[1]].classList.add('hint-anim'); }
         }
 
         function findMatches(state) {
@@ -662,7 +556,10 @@
             setTimeout(() => {
                 let matchResult = findMatches(gridState);
                 if (matchResult.indices.length > 0) { processMatches(matchResult); } 
-                else { if (!hasPossibleMoves()) shuffleBoard(); else { isLocked = false; resetHintTimer(); } }
+                else { 
+                    if (!hasPossibleMoves()) shuffleBoard();
+                    else { isLocked = false; resetHintTimer(); }
+                }
             }, 500);
         }
         function hasPossibleMoves() {
@@ -680,12 +577,18 @@
         function shuffleBoard() {
             isLocked = true; document.getElementById('shuffle-msg').style.display = 'block'; stopHintTimer();
             setTimeout(() => {
-                let attempts = 0;
-                do {
+                let attempts = 0; let success = false;
+                while (!success && attempts < 500) {
                     for (let i = gridState.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [gridState[i], gridState[j]] = [gridState[j], gridState[i]]; }
                     if (findMatches(gridState).indices.length > 0) gridState = gridState.map(() => createNewTile());
+                    if (hasPossibleMoves()) success = true;
                     attempts++;
-                } while (!hasPossibleMoves() && attempts < 100);
+                }
+                if (!success) {
+                    let forcedFood = candyColors[0];
+                    gridState[0] = { food: forcedFood, power: null }; gridState[1] = { food: forcedFood, power: null };
+                    gridState[2] = { food: candyColors[1], power: null }; gridState[3] = { food: forcedFood, power: null };
+                }
                 renderBoard();
                 const tiles = document.querySelectorAll('.tile'); tiles.forEach(t => t.classList.add('shuffle-anim'));
                 setTimeout(() => { tiles.forEach(t => t.classList.remove('shuffle-anim')); document.getElementById('shuffle-msg').style.display = 'none'; isLocked = false; resetHintTimer(); }, 500);
@@ -705,15 +608,8 @@
         }
         function updateUI() {
             document.getElementById('score-display').innerText = score; document.getElementById('level-display').innerText = level;
-            
-            if (gameMode === 'TIME') {
-                // In time mode, bar represents time percentage
-                const pct = (timeRemaining / 120) * 100;
-                document.getElementById('bar-fill').style.width = pct + '%';
-            } else {
-                // In RPG mode, bar represents XP
-                document.getElementById('bar-fill').style.width = Math.min(100, (currentXP / xpToNextLevel) * 100) + '%';
-            }
+            if (gameMode === 'TIME') { const pct = (timeRemaining / 120) * 100; document.getElementById('bar-fill').style.width = pct + '%'; }
+            else { document.getElementById('bar-fill').style.width = Math.min(100, (currentXP / xpToNextLevel) * 100) + '%'; }
         }
     </script>
 </body>
