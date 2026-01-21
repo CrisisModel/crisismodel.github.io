@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#2c2137">
-    <title>Pixel Feast: Countdown</title>
+    <title>Pixel Feast: Fixed Hints</title>
     
     <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -310,10 +310,10 @@
             const tick = () => {
                 if (count > 0) {
                     countdownOverlay.innerText = count;
-                    countdownOverlay.className = ''; // reset
-                    void countdownOverlay.offsetWidth; // reflow
+                    countdownOverlay.className = ''; 
+                    void countdownOverlay.offsetWidth; 
                     countdownOverlay.className = 'count-anim';
-                    AudioSys.playNote(440, AudioSys.ctx.currentTime, 0.1); // Low Beep
+                    AudioSys.playNote(440, AudioSys.ctx.currentTime, 0.1); 
                     count--;
                     setTimeout(tick, 1000);
                 } else if (count === 0) {
@@ -321,13 +321,15 @@
                     countdownOverlay.className = '';
                     void countdownOverlay.offsetWidth;
                     countdownOverlay.className = 'count-anim';
-                    AudioSys.playNote(880, AudioSys.ctx.currentTime, 0.3); // High Beep
+                    AudioSys.playNote(880, AudioSys.ctx.currentTime, 0.3); 
                     count--;
                     setTimeout(tick, 1000);
                 } else {
                     countdownOverlay.style.display = 'none';
                     isLocked = false;
                     startTimer();
+                    // FIX: Re-enable hint timer after countdown!
+                    resetHintTimer();
                 }
             };
             tick();
@@ -371,7 +373,7 @@
             }
             renderBoard();
             if (!hasPossibleMoves()) shuffleBoard();
-            else if (gameMode !== 'TIME') resetHintTimer(); // Don't hint during countdown
+            else if (gameMode !== 'TIME') resetHintTimer(); // For RPG mode
         }
 
         function createNewTile(fixedFood) { return { food: fixedFood || getRandomFood(), power: null }; }
