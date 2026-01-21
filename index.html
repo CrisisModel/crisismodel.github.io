@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#2c2137">
-    <title>Pixel Feast Quest: Audio</title>
+    <title>Pixel Feast Quest: Bread Update</title>
     
     <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -155,7 +155,9 @@
         /* --- POWER UP STYLES --- */
         .tile.power-taco { background-color: #ff7e47 !important; box-shadow: inset 0 0 10px #7a1c00; border: 2px solid #ffcc00; }
         .tile.power-sushi { background-color: #ffd700 !important; box-shadow: inset 0 0 10px #8b6914; animation: pulse-gold 1s infinite; }
-        .tile.power-milk { background-color: #4da6ff !important; box-shadow: inset 0 0 10px #003366; border: 2px solid #fff; }
+        
+        /* Bread Style (Golden Brown) */
+        .tile.power-bread { background-color: #d4a373 !important; box-shadow: inset 0 0 10px #8b4513; border: 2px solid #fff; }
 
         @media (min-aspect-ratio: 1/1) and (min-width: 600px) {
             body { flex-direction: row; gap: 40px; }
@@ -190,246 +192,138 @@
         @keyframes explode { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.8; } 100% { transform: scale(0); opacity: 0; } }
         @keyframes fallDown { 0% { transform: translateY(-150%); opacity: 0; } 50% { transform: translateY(0); opacity: 1; } 70% { transform: translateY(-10%); } 100% { transform: translateY(0); } }
         @keyframes spin { 0% { transform: rotate(0deg) scale(1); opacity: 1; } 50% { transform: rotate(180deg) scale(0.5); opacity: 0.5; } 100% { transform: rotate(360deg) scale(1); opacity: 1; } }
-
-        .floater {
-            position: absolute;
-            color: #ffff00;
-            font-size: clamp(10px, 2vw, 20px);
-            font-weight: bold;
-            pointer-events: none;
-            animation: floatUp 1s forwards;
-            text-shadow: 2px 2px 0 #000;
-            z-index: 100;
-            white-space: nowrap;
-        }
-
         @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-50px); opacity: 0; } }
 
-        #console-log {
-            font-size: clamp(8px, 2vw, 10px);
-            color: #8b9bb4;
-            min-height: 1.5em;
-            text-align: center;
-        }
-        
-        #shuffle-msg {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8);
-            color: #fff;
-            padding: 20px;
-            border: 2px solid var(--border-light);
-            display: none;
-            z-index: 20;
-            font-size: clamp(12px, 3vw, 16px);
-            text-align: center;
-            pointer-events: none;
-        }
+        .floater { position: absolute; color: #ffff00; font-size: clamp(10px, 2vw, 20px); font-weight: bold; pointer-events: none; animation: floatUp 1s forwards; text-shadow: 2px 2px 0 #000; z-index: 100; white-space: nowrap; }
+        #console-log { font-size: clamp(8px, 2vw, 10px); color: #8b9bb4; min-height: 1.5em; text-align: center; }
+        #shuffle-msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: #fff; padding: 20px; border: 2px solid var(--border-light); display: none; z-index: 20; font-size: clamp(12px, 3vw, 16px); text-align: center; pointer-events: none; }
     </style>
 </head>
 <body>
     <div class="ui-panel">
         <h1>PIXEL FEAST QUEST</h1>
-        
         <div class="stats-grid">
-            <span class="stat-label">LVL:</span>
-            <span class="stat-val" id="level-display">1</span>
-            <span class="stat-label">SCORE:</span>
-            <span class="stat-val" id="score-display">0</span>
+            <span class="stat-label">LVL:</span><span class="stat-val" id="level-display">1</span>
+            <span class="stat-label">SCORE:</span><span class="stat-val" id="score-display">0</span>
         </div>
-        <div class="xp-container">
-            <div class="xp-fill" id="xp-bar"></div>
-        </div>
-        
+        <div class="xp-container"><div class="xp-fill" id="xp-bar"></div></div>
         <div class="mastery-section" id="mastery-grid"></div>
-
         <div id="console-log">Tap to start audio...</div>
     </div>
-    
     <div class="game-board" id="grid">
         <div id="shuffle-msg">NO MOVES!<br>SHUFFLING...</div>
     </div>
 
     <script>
-        // --- AUDIO SYSTEM (Web Audio API) ---
+        // --- PWA SERVICE WORKER REGISTRATION ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW Registered'))
+                    .catch(err => console.log('SW Error:', err));
+            });
+        }
+
+        // --- AUDIO SYSTEM ---
         const AudioSys = {
             ctx: null,
             init: function() {
-                if (!this.ctx) {
-                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (this.ctx.state === 'suspended') {
-                    this.ctx.resume();
-                }
+                if (!this.ctx) { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+                if (this.ctx.state === 'suspended') { this.ctx.resume(); }
             },
             play: function(type) {
                 if (!this.ctx) return;
                 const t = this.ctx.currentTime;
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
+                osc.connect(gain); gain.connect(this.ctx.destination);
 
                 if (type === 'select') {
-                    // High Blip
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(800, t);
-                    osc.frequency.exponentialRampToValueAtTime(1200, t + 0.05);
-                    gain.gain.setValueAtTime(0.1, t);
-                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
-                    osc.start(t);
-                    osc.stop(t + 0.1);
-                } 
-                else if (type === 'match') {
-                    // Coin/Ching
-                    osc.type = 'square';
-                    osc.frequency.setValueAtTime(1200, t);
-                    osc.frequency.setValueAtTime(1600, t + 0.05);
-                    gain.gain.setValueAtTime(0.1, t);
-                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
-                    osc.start(t);
-                    osc.stop(t + 0.2);
-                } 
-                else if (type === 'invalid') {
-                    // Low Buzz
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(150, t);
-                    osc.frequency.linearRampToValueAtTime(100, t + 0.1);
-                    gain.gain.setValueAtTime(0.1, t);
-                    gain.gain.linearRampToValueAtTime(0.01, t + 0.15);
-                    osc.start(t);
-                    osc.stop(t + 0.15);
-                }
-                else if (type === 'powerup') {
-                    // Laser Slide
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(400, t);
-                    osc.frequency.exponentialRampToValueAtTime(1000, t + 0.3);
-                    gain.gain.setValueAtTime(0.1, t);
-                    gain.gain.linearRampToValueAtTime(0.01, t + 0.3);
-                    osc.start(t);
-                    osc.stop(t + 0.3);
-                }
-                else if (type === 'levelup') {
-                    // Arpeggio
-                    this.playNote(523.25, t, 0.1); // C
-                    this.playNote(659.25, t + 0.1, 0.1); // E
-                    this.playNote(783.99, t + 0.2, 0.3); // G
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(800, t); osc.frequency.exponentialRampToValueAtTime(1200, t + 0.05);
+                    gain.gain.setValueAtTime(0.1, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+                    osc.start(t); osc.stop(t + 0.1);
+                } else if (type === 'match') {
+                    osc.type = 'square'; osc.frequency.setValueAtTime(1200, t); osc.frequency.setValueAtTime(1600, t + 0.05);
+                    gain.gain.setValueAtTime(0.1, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+                    osc.start(t); osc.stop(t + 0.2);
+                } else if (type === 'invalid') {
+                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, t); osc.frequency.linearRampToValueAtTime(100, t + 0.1);
+                    gain.gain.setValueAtTime(0.1, t); gain.gain.linearRampToValueAtTime(0.01, t + 0.15);
+                    osc.start(t); osc.stop(t + 0.15);
+                } else if (type === 'powerup') {
+                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(400, t); osc.frequency.exponentialRampToValueAtTime(1000, t + 0.3);
+                    gain.gain.setValueAtTime(0.1, t); gain.gain.linearRampToValueAtTime(0.01, t + 0.3);
+                    osc.start(t); osc.stop(t + 0.3);
+                } else if (type === 'levelup') {
+                    this.playNote(523.25, t, 0.1); this.playNote(659.25, t + 0.1, 0.1); this.playNote(783.99, t + 0.2, 0.3);
                 }
             },
             playNote: function(freq, time, dur) {
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(freq, time);
-                gain.gain.setValueAtTime(0.1, time);
-                gain.gain.exponentialRampToValueAtTime(0.01, time + dur);
-                osc.start(time);
-                osc.stop(time + dur);
+                const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.type = 'square'; osc.frequency.setValueAtTime(freq, time);
+                gain.gain.setValueAtTime(0.1, time); gain.gain.exponentialRampToValueAtTime(0.01, time + dur);
+                osc.start(time); osc.stop(time + dur);
             }
         };
 
         // --- GAME VARIABLES ---
         const width = 8;
-        const candyColors = ['🍔', '🍕', '🍣', '🍩', '🥑', '🍗'];
-        
+        const candyColors = ['🍔', '🍕', '🍪', '🍩', '🍟', '🍗'];
         let gridState = [];
-        let score = 0;
-        let level = 1;
-        let currentXP = 0;
-        let xpToNextLevel = 100;
+        let score = 0; let level = 1; let currentXP = 0; let xpToNextLevel = 100;
         let masteryData = {};
-
-        let selectedTileIndex = null;
-        let isLocked = false; 
-        let lastSwapIndex = -1; 
-        
-        let hintTimeout = null;
-        const HINT_DELAY = 6000;
-
+        let selectedTileIndex = null; let isLocked = false; let lastSwapIndex = -1;
+        let hintTimeout = null; const HINT_DELAY = 6000;
         const gridElement = document.getElementById('grid');
         const masteryGridElement = document.getElementById('mastery-grid');
 
         document.addEventListener('DOMContentLoaded', () => { initGame(); });
-        
+
         function initGame() {
             masteryData = {};
-            candyColors.forEach(food => {
-                masteryData[food] = { level: 1, current: 0, max: 20 };
-            });
+            candyColors.forEach(food => { masteryData[food] = { level: 1, current: 0, max: 20 }; });
             renderMasteryUI();
-
             gridState = [];
             for (let i = 0; i < width * width; i++) gridState.push(createNewTile());
-            
             let settling = true;
             while(settling) {
-                if (findMatches(gridState).indices.length > 0) {
-                    gridState = gridState.map(() => createNewTile());
-                } else {
-                    settling = false;
-                }
+                if (findMatches(gridState).indices.length > 0) { gridState = gridState.map(() => createNewTile()); } 
+                else { settling = false; }
             }
             renderBoard();
             if (!hasPossibleMoves()) shuffleBoard();
             else resetHintTimer();
-            
             score = 0; currentXP = 0; updateUI();
         }
-
-        function createNewTile(fixedFood) {
-            return {
-                food: fixedFood || getRandomFood(),
-                power: null
-            };
-        }
-
+        function createNewTile(fixedFood) { return { food: fixedFood || getRandomFood(), power: null }; }
         function renderBoard() {
             if(gridElement.querySelectorAll('.tile').length === 0) {
                 for (let i = 0; i < width * width; i++) {
                     const square = document.createElement('div');
-                    square.classList.add('tile');
-                    square.setAttribute('id', `tile-${i}`);
+                    square.classList.add('tile'); square.setAttribute('id', `tile-${i}`);
                     square.addEventListener('pointerdown', (e) => { 
-                        // Initialize Audio on first interaction
-                        AudioSys.init();
-                        e.preventDefault(); 
-                        handleInput(i); 
+                        AudioSys.init(); e.preventDefault(); handleInput(i); 
                     });
                     gridElement.appendChild(square);
                 }
             }
             updateVisuals();
         }
-
         function updateVisuals() {
             const tiles = document.querySelectorAll('.tile');
             for(let i=0; i<width*width; i++) {
-                const data = gridState[i];
-                const el = tiles[i];
-                el.className = 'tile';
+                const data = gridState[i]; const el = tiles[i]; el.className = 'tile';
                 if(selectedTileIndex === i) el.classList.add('selected');
-
-                if (data === null) {
-                    el.innerHTML = '';
-                    continue;
-                }
-
-                if (data.power === 'taco') {
-                    el.innerHTML = '🌮'; el.classList.add('power-taco');
-                } else if (data.power === 'sushi') {
-                    el.innerHTML = '🍱'; el.classList.add('power-sushi');
-                } else if (data.power === 'milk') {
-                    el.innerHTML = '🥛'; el.classList.add('power-milk');
-                } else {
-                    el.innerHTML = data.food;
-                }
+                if (data === null) { el.innerHTML = ''; continue; }
+                
+                if (data.power === 'taco') { el.innerHTML = '🌮'; el.classList.add('power-taco'); } 
+                else if (data.power === 'sushi') { el.innerHTML = '🎂'; el.classList.add('power-sushi'); } 
+                // UPDATED MILK TO BREAD
+                else if (data.power === 'bread') { el.innerHTML = '🍞'; el.classList.add('power-bread'); } 
+                else { el.innerHTML = data.food; }
             }
         }
-
         function renderMasteryUI() {
             masteryGridElement.innerHTML = '';
             candyColors.forEach(food => {
@@ -437,456 +331,268 @@
                 const item = document.createElement('div');
                 item.className = 'mastery-item';
                 let pct = Math.min(100, (m.current / m.max) * 100);
-                item.innerHTML = `
-                    <span class="m-icon">${food}</span>
-                    <div class="m-bar-container">
-                        <div class="m-bar-fill" id="m-bar-${food}" style="width:${pct}%"></div>
-                        <span class="m-lvl" id="m-lvl-${food}">v${m.level}</span>
-                    </div>
-                `;
+                item.innerHTML = `<span class="m-icon">${food}</span><div class="m-bar-container"><div class="m-bar-fill" id="m-bar-${food}" style="width:${pct}%"></div><span class="m-lvl" id="m-lvl-${food}">v${m.level}</span></div>`;
                 masteryGridElement.appendChild(item);
             });
         }
-
         function updateMasteryProgress(food) {
-            const m = masteryData[food];
-            const bar = document.getElementById(`m-bar-${food}`);
-            const lvl = document.getElementById(`m-lvl-${food}`);
-            if(bar && lvl) {
-                let pct = Math.min(100, (m.current / m.max) * 100);
-                bar.style.width = `${pct}%`;
-                lvl.innerText = `v${m.level}`;
-            }
+            const m = masteryData[food]; const bar = document.getElementById(`m-bar-${food}`); const lvl = document.getElementById(`m-lvl-${food}`);
+            if(bar && lvl) { let pct = Math.min(100, (m.current / m.max) * 100); bar.style.width = `${pct}%`; lvl.innerText = `v${m.level}`; }
         }
-
         function handleInput(index) {
             if (isLocked) return;
             resetHintTimer();
-
             const tiles = document.querySelectorAll('.tile');
-
-            if (selectedTileIndex === null) {
-                selectedTileIndex = index;
-                tiles[index].classList.add('selected');
-                AudioSys.play('select');
-            } else {
-                let prevIndex = selectedTileIndex;
-                tiles[prevIndex].classList.remove('selected');
-                selectedTileIndex = null;
+            if (selectedTileIndex === null) { selectedTileIndex = index; tiles[index].classList.add('selected'); AudioSys.play('select'); } 
+            else {
+                let prevIndex = selectedTileIndex; tiles[prevIndex].classList.remove('selected'); selectedTileIndex = null;
                 if (prevIndex === index) return;
-
-                if (isAdjacent(prevIndex, index)) {
-                    swapAndCheck(prevIndex, index);
-                } else {
-                    selectedTileIndex = index;
-                    tiles[index].classList.add('selected');
-                    AudioSys.play('select');
-                }
+                if (isAdjacent(prevIndex, index)) { swapAndCheck(prevIndex, index); } 
+                else { selectedTileIndex = index; tiles[index].classList.add('selected'); AudioSys.play('select'); }
             }
         }
-
         function isAdjacent(idx1, idx2) {
-            const r1 = Math.floor(idx1/width), c1 = idx1%width;
-            const r2 = Math.floor(idx2/width), c2 = idx2%width;
+            const r1 = Math.floor(idx1/width), c1 = idx1%width, r2 = Math.floor(idx2/width), c2 = idx2%width;
             return Math.abs(r1-r2) + Math.abs(c1-c2) === 1;
         }
-
         function swapAndCheck(idx1, idx2) {
-            isLocked = true;
-            stopHintTimer();
-            lastSwapIndex = idx2;
-            const tile1 = gridState[idx1];
-            const tile2 = gridState[idx2];
+            isLocked = true; stopHintTimer(); lastSwapIndex = idx2;
+            const tile1 = gridState[idx1]; const tile2 = gridState[idx2];
+            AudioSys.play('select');
             
-            AudioSys.play('select'); // Swap sound
-
+            // --- POWER UP & CHAIN LOGIC ---
             if (tile1.power || tile2.power) {
                 let swapDir = Math.abs(idx1 - idx2) === 1 ? 'horz' : 'vert';
-                gridState[idx1] = tile2;
-                gridState[idx2] = tile1;
-                updateVisuals();
-                
+                gridState[idx1] = tile2; gridState[idx2] = tile1; updateVisuals();
                 let exploded = new Set();
+                
+                // Pass the swap direction to collectExplosion
                 if (tile1.power) collectExplosion(idx2, tile1, tile2, exploded, swapDir);
                 if (tile2.power) collectExplosion(idx1, tile2, tile1, exploded, swapDir);
                 
-                AudioSys.play('powerup');
-                runClearSequence(Array.from(exploded));
-                return;
+                AudioSys.play('powerup'); runClearSequence(Array.from(exploded)); return;
             }
 
-            gridState[idx1] = tile2;
-            gridState[idx2] = tile1;
-            updateVisuals();
-
+            gridState[idx1] = tile2; gridState[idx2] = tile1; updateVisuals();
             setTimeout(() => {
                 const matchResult = findMatches(gridState);
-                if (matchResult.indices.length > 0) {
-                    processMatches(matchResult);
-                } else {
-                    gridState[idx1] = tile1;
-                    gridState[idx2] = tile2;
-                    updateVisuals();
-                    AudioSys.play('invalid');
-                    logMsg("Invalid Move!", "#ff5555");
-                    isLocked = false;
-                    resetHintTimer();
+                if (matchResult.indices.length > 0) { processMatches(matchResult); } 
+                else {
+                    gridState[idx1] = tile1; gridState[idx2] = tile2; updateVisuals();
+                    AudioSys.play('invalid'); logMsg("Invalid Move!", "#ff5555"); isLocked = false; resetHintTimer();
                 }
             }, 200);
         }
 
-        function resetHintTimer() {
-            clearTimeout(hintTimeout);
-            clearHints();
-            if(!isLocked) hintTimeout = setTimeout(showHint, HINT_DELAY);
-        }
-
-        function stopHintTimer() {
-            clearTimeout(hintTimeout);
-            clearHints();
-        }
-
-        function clearHints() {
-            const tiles = document.querySelectorAll('.tile');
-            tiles.forEach(t => t.classList.remove('hint-anim'));
-        }
-
-        function showHint() {
-            if(isLocked) return;
-            let possibleMoves = [];
-            for (let r=0; r<width; r++) {
-                for (let c=0; c<width-1; c++) {
-                    let idx = r*width + c;
-                    if(trySwap(idx, idx+1)) possibleMoves.push([idx, idx+1]);
-                }
-            }
-            for (let c=0; c<width; c++) {
-                for (let r=0; r<width-1; r++) {
-                    let idx = r*width + c;
-                    if(trySwap(idx, idx+width)) possibleMoves.push([idx, idx+width]);
-                }
-            }
-            for(let i=0; i<gridState.length; i++) {
-                if(gridState[i].power) {
-                    if (i+1 < width*width && i%width !== 7) possibleMoves.push([i, i+1]);
-                    if (i+width < width*width) possibleMoves.push([i, i+width]);
-                }
-            }
-            if (possibleMoves.length > 0) {
-                let move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-                const tiles = document.querySelectorAll('.tile');
-                tiles[move[0]].classList.add('hint-anim');
-                tiles[move[1]].classList.add('hint-anim');
-            }
-        }
-
+        // --- NEW RECURSIVE CHAIN LOGIC ---
         function collectExplosion(originIdx, powerTile, targetTile, set, direction) {
             if (set.has(originIdx)) return;
             set.add(originIdx);
+            
             const r = Math.floor(originIdx / width);
             const c = originIdx % width;
-            let dir = direction || 'horz';
+            let dir = direction || 'horz'; // Default to horizontal if undefined
 
             if (powerTile.power === 'taco') {
-                if (dir === 'vert') for(let i=c; i<width*width; i+=width) checkCascade(i, set);
-                else for(let i=r*width; i<(r+1)*width; i++) checkCascade(i, set);
-            } else if (powerTile.power === 'milk') {
-                for(let i=r*width; i<(r+1)*width; i++) checkCascade(i, set);
-                for(let i=c; i<width*width; i+=width) checkCascade(i, set);
+                if (dir === 'vert') {
+                    // Clear Column (and cascade vertically)
+                    for(let i=c; i<width*width; i+=width) checkCascade(i, set, 'vert');
+                } else {
+                    // Clear Row (and cascade horizontally)
+                    for(let i=r*width; i<(r+1)*width; i++) checkCascade(i, set, 'horz');
+                }
+            } else if (powerTile.power === 'bread') {
+                // Clear Row (Horz) & Col (Vert)
+                for(let i=r*width; i<(r+1)*width; i++) checkCascade(i, set, 'horz');
+                for(let i=c; i<width*width; i+=width) checkCascade(i, set, 'vert');
             } else if (powerTile.power === 'sushi') {
                 let targetFood = targetTile.food;
+                // If hit by chain, pick RANDOM food
                 if (!targetFood && targetTile.power) targetFood = getRandomFood(); 
-                for(let i=0; i<width*width; i++) {
-                    if(gridState[i] && gridState[i].food === targetFood) checkCascade(i, set);
+                
+                for(let i=0; i<width*width; i++) { 
+                    if(gridState[i] && gridState[i].food === targetFood) checkCascade(i, set, 'horz'); 
                 }
             }
         }
 
-        function checkCascade(idx, set) {
+        function checkCascade(idx, set, incomingDir) {
             if(set.has(idx)) return;
             if(!gridState[idx]) return;
             set.add(idx);
-            if (gridState[idx].power) collectExplosion(idx, gridState[idx], {food:null}, set);
+            
+            // If we hit another powerup, TRIGGER CHAIN
+            if (gridState[idx].power) {
+                let nextDir = incomingDir;
+                // IF we hit a Taco, we FLIP the direction for perpendicular chaos
+                if (gridState[idx].power === 'taco') {
+                    nextDir = (incomingDir === 'horz') ? 'vert' : 'horz';
+                }
+                
+                // Pass a dummy target since it wasn't a swap
+                let dummyTarget = { food: null, power: true };
+                collectExplosion(idx, gridState[idx], dummyTarget, set, nextDir);
+            }
+        }
+
+        function resetHintTimer() { clearTimeout(hintTimeout); clearHints(); if(!isLocked) hintTimeout = setTimeout(showHint, HINT_DELAY); }
+        function stopHintTimer() { clearTimeout(hintTimeout); clearHints(); }
+        function clearHints() { document.querySelectorAll('.tile').forEach(t => t.classList.remove('hint-anim')); }
+        function showHint() {
+            if(isLocked) return;
+            let possibleMoves = [];
+            for (let r=0; r<width; r++) { for (let c=0; c<width-1; c++) { let idx = r*width + c; if(trySwap(idx, idx+1)) possibleMoves.push([idx, idx+1]); } }
+            for (let c=0; c<width; c++) { for (let r=0; r<width-1; r++) { let idx = r*width + c; if(trySwap(idx, idx+width)) possibleMoves.push([idx, idx+width]); } }
+            for(let i=0; i<gridState.length; i++) { if(gridState[i].power) { if (i+1 < width*width && i%width !== 7) possibleMoves.push([i, i+1]); if (i+width < width*width) possibleMoves.push([i, i+width]); } }
+            if (possibleMoves.length > 0) { let move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)]; const tiles = document.querySelectorAll('.tile'); tiles[move[0]].classList.add('hint-anim'); tiles[move[1]].classList.add('hint-anim'); }
         }
 
         function findMatches(state) {
-            let uniqueIndices = new Set();
-            let groups = [];
-            const addGroup = (indices, type) => {
-                if (indices.length >= 3) {
-                    groups.push({ indices: [...indices], type: type }); 
-                    indices.forEach(i => uniqueIndices.add(i));
-                }
-            };
+            let uniqueIndices = new Set(); let groups = [];
+            const addGroup = (indices, type) => { if (indices.length >= 3) { groups.push({ indices: [...indices], type: type }); indices.forEach(i => uniqueIndices.add(i)); } };
             for (let r = 0; r < width; r++) {
                 let currentRun = [];
                 for (let c = 0; c < width; c++) {
-                    let idx = r * width + c;
-                    let cell = state[idx];
-                    if (currentRun.length > 0 && cell && cell.power === null && cell.food === state[currentRun[0]].food) {
-                        currentRun.push(idx);
-                    } else {
-                        addGroup(currentRun, 'horz');
-                        currentRun = [idx];
-                        if(!cell || cell.power !== null) currentRun = [];
-                    }
-                }
-                addGroup(currentRun, 'horz');
+                    let idx = r * width + c, cell = state[idx];
+                    if (currentRun.length > 0 && cell && cell.power === null && cell.food === state[currentRun[0]].food) { currentRun.push(idx); } 
+                    else { addGroup(currentRun, 'horz'); currentRun = [idx]; if(!cell || cell.power !== null) currentRun = []; }
+                } addGroup(currentRun, 'horz');
             }
             for (let c = 0; c < width; c++) {
                 let currentRun = [];
                 for (let r = 0; r < width; r++) {
-                    let idx = r * width + c;
-                    let cell = state[idx];
-                    if (currentRun.length > 0 && cell && cell.power === null && cell.food === state[currentRun[0]].food) {
-                        currentRun.push(idx);
-                    } else {
-                        addGroup(currentRun, 'vert');
-                        currentRun = [idx];
-                        if(!cell || cell.power !== null) currentRun = [];
-                    }
-                }
-                addGroup(currentRun, 'vert');
+                    let idx = r * width + c, cell = state[idx];
+                    if (currentRun.length > 0 && cell && cell.power === null && cell.food === state[currentRun[0]].food) { currentRun.push(idx); } 
+                    else { addGroup(currentRun, 'vert'); currentRun = [idx]; if(!cell || cell.power !== null) currentRun = []; }
+                } addGroup(currentRun, 'vert');
             }
             return { indices: Array.from(uniqueIndices), groups: groups };
         }
-
         function processMatches(matchResult) {
-            const { indices, groups } = matchResult;
-            let spawns = {};
-            let processedGroups = new Set();
-
+            const { indices, groups } = matchResult; let spawns = {}; let processedGroups = new Set();
             for (let i = 0; i < groups.length; i++) {
                 for (let j = i + 1; j < groups.length; j++) {
-                    let g1 = groups[i], g2 = groups[j];
-                    let intersect = g1.indices.filter(x => g2.indices.includes(x));
-                    if (intersect.length > 0) {
-                        spawns[intersect[0]] = 'milk';
-                        processedGroups.add(g1); processedGroups.add(g2);
-                    }
+                    let g1 = groups[i], g2 = groups[j], intersect = g1.indices.filter(x => g2.indices.includes(x));
+                    if (intersect.length > 0) { spawns[intersect[0]] = 'bread'; processedGroups.add(g1); processedGroups.add(g2); }
                 }
             }
-
             groups.forEach(g => {
                 if (processedGroups.has(g)) return;
-                if (g.indices.length >= 5) {
-                    let target = g.indices.includes(lastSwapIndex) ? lastSwapIndex : g.indices[Math.floor(g.indices.length/2)];
-                    spawns[target] = 'sushi';
-                } else if (g.indices.length === 4) {
-                    let target = g.indices.includes(lastSwapIndex) ? lastSwapIndex : g.indices[Math.floor(g.indices.length/2)];
-                    spawns[target] = 'taco';
-                }
+                if (g.indices.length >= 5) { let target = g.indices.includes(lastSwapIndex) ? lastSwapIndex : g.indices[Math.floor(g.indices.length/2)]; spawns[target] = 'sushi'; } 
+                else if (g.indices.length === 4) { let target = g.indices.includes(lastSwapIndex) ? lastSwapIndex : g.indices[Math.floor(g.indices.length/2)]; spawns[target] = 'taco'; }
             });
-
             calculateScoreAndMastery(indices);
-
             const tiles = document.querySelectorAll('.tile');
-            indices.forEach(idx => {
-                if (!spawns[idx]) {
-                    tiles[idx].classList.add('pop-anim');
-                    gridState[idx] = null;
-                }
-            });
-
+            indices.forEach(idx => { if (!spawns[idx]) { tiles[idx].classList.add('pop-anim'); gridState[idx] = null; } });
             for (const [idx, type] of Object.entries(spawns)) {
-                let index = parseInt(idx);
-                gridState[index] = { food: gridState[index].food, power: type };
-                tiles[index].classList.remove('pop-anim');
-                updateVisuals(); 
-                tiles[index].classList.add('selected'); 
-                AudioSys.play('powerup');
+                let index = parseInt(idx); gridState[index] = { food: gridState[index].food, power: type };
+                tiles[index].classList.remove('pop-anim'); updateVisuals(); tiles[index].classList.add('selected'); AudioSys.play('powerup');
                 setTimeout(()=>tiles[index].classList.remove('selected'), 500);
             }
-
             setTimeout(() => applyGravity(), 300);
         }
-
         function runClearSequence(indices) {
             if (indices.length === 0) { isLocked = false; resetHintTimer(); return; }
             calculateScoreAndMastery(indices);
             const tiles = document.querySelectorAll('.tile');
-            indices.forEach(idx => {
-                tiles[idx].classList.add('pop-anim');
-                gridState[idx] = null;
-            });
+            indices.forEach(idx => { tiles[idx].classList.add('pop-anim'); gridState[idx] = null; });
             setTimeout(() => applyGravity(), 300);
         }
-
         function calculateScoreAndMastery(indices) {
-            let totalScore = 0;
-            if(indices.length > 0) AudioSys.play('match');
-
+            let totalScore = 0; if(indices.length > 0) AudioSys.play('match');
             indices.forEach(idx => {
                 if(!gridState[idx]) return;
                 let type = gridState[idx].food;
                 if (masteryData[type]) {
-                    let m = masteryData[type];
-                    m.current++;
+                    let m = masteryData[type]; m.current++;
                     if (m.current >= m.max) {
-                        m.level++;
-                        m.current -= m.max;
-                        m.max = Math.floor(m.max * 1.5);
-                        showFloatText("MAX!", idx);
-                        logMsg(`${type} LEVEL UP!`, "#d46eb3");
-                        AudioSys.play('powerup');
+                        m.level++; m.current -= m.max; m.max = Math.floor(m.max * 1.5);
+                        showFloatText("MAX!", idx); logMsg(`${type} LEVEL UP!`, "#d46eb3"); AudioSys.play('powerup');
                     }
-                    updateMasteryProgress(type);
-                    totalScore += 10 * (1 + (m.level * 0.2));
-                } else {
-                    totalScore += 10;
-                }
+                    updateMasteryProgress(type); totalScore += 10 * (1 + (m.level * 0.2));
+                } else { totalScore += 10; }
             });
             let finalScore = Math.floor(totalScore * (1 + (level * 0.1)));
-            score += finalScore;
-            currentXP += finalScore; 
+            score += finalScore; currentXP += finalScore; 
             if (indices.length > 0) showFloatText(`+${finalScore}`, indices[0]);
-            if (currentXP >= xpToNextLevel) {
-                playerLevelUp();
-            }
+            if (currentXP >= xpToNextLevel) { playerLevelUp(); }
             updateUI();
         }
-
         function playerLevelUp() {
-            level++;
-            currentXP -= xpToNextLevel;
-            xpToNextLevel = Math.floor(xpToNextLevel * 1.5);
-            AudioSys.play('levelup');
-
-            if (level % 5 === 0) {
-                logMsg(`LEVEL ${level}! SUSHI REWARD!`, "#ffd700");
-                spawnRewardSushi();
-            } else {
-                logMsg(`LEVEL ${level}!`, "#ffff00");
-            }
+            level++; currentXP -= xpToNextLevel; xpToNextLevel = Math.floor(xpToNextLevel * 1.5); AudioSys.play('levelup');
+            if (level % 5 === 0) { logMsg(`LEVEL ${level}! CAKE REWARD!`, "#ffd700"); spawnRewardSushi(); } 
+            else { logMsg(`LEVEL ${level}!`, "#ffff00"); }
         }
-
         function spawnRewardSushi() {
             let candidates = [];
-            for(let i=0; i<gridState.length; i++) {
-                if(gridState[i] && gridState[i].power === null) {
-                    candidates.push(i);
-                }
-            }
+            for(let i=0; i<gridState.length; i++) { if(gridState[i] && gridState[i].power === null) candidates.push(i); }
             if (candidates.length > 0) {
                 let pick = candidates[Math.floor(Math.random() * candidates.length)];
-                gridState[pick].power = 'sushi';
-                const tiles = document.querySelectorAll('.tile');
-                updateVisuals();
-                tiles[pick].classList.add('selected');
-                AudioSys.play('powerup');
-                setTimeout(() => tiles[pick].classList.remove('selected'), 1000);
+                gridState[pick].power = 'sushi'; const tiles = document.querySelectorAll('.tile'); updateVisuals();
+                tiles[pick].classList.add('selected'); AudioSys.play('powerup'); setTimeout(() => tiles[pick].classList.remove('selected'), 1000);
             }
         }
-
         function applyGravity() {
             let changedIndices = [];
             for (let c = 0; c < width; c++) {
                 let colValues = [];
                 for (let r = 0; r < width; r++) colValues.push(gridState[r * width + c]);
-                let validValues = colValues.filter(v => v !== null);
-                let missingCount = width - validValues.length;
-                let newCol = [];
-                for(let k=0; k<missingCount; k++) newCol.push(createNewTile());
-                newCol = newCol.concat(validValues);
+                let validValues = colValues.filter(v => v !== null); let missingCount = width - validValues.length;
+                let newCol = []; for(let k=0; k<missingCount; k++) newCol.push(createNewTile()); newCol = newCol.concat(validValues);
                 for (let r = 0; r < width; r++) {
-                    let idx = r * width + c;
-                    let oldVal = gridState[idx];
-                    let newVal = newCol[r];
-                    if (r < missingCount || oldVal !== newVal) changedIndices.push(idx);
-                    gridState[idx] = newVal;
+                    let idx = r * width + c; let oldVal = gridState[idx]; let newVal = newCol[r];
+                    if (r < missingCount || oldVal !== newVal) changedIndices.push(idx); gridState[idx] = newVal;
                 }
             }
-            const tiles = document.querySelectorAll('.tile');
-            for (let i = 0; i < width * width; i++) tiles[i].classList.remove('pop-anim');
+            const tiles = document.querySelectorAll('.tile'); for (let i = 0; i < width * width; i++) tiles[i].classList.remove('pop-anim');
             updateVisuals();
-            changedIndices.forEach(idx => {
-                tiles[idx].classList.remove('drop-anim');
-                void tiles[idx].offsetWidth;
-                tiles[idx].classList.add('drop-anim');
-            });
+            changedIndices.forEach(idx => { tiles[idx].classList.remove('drop-anim'); void tiles[idx].offsetWidth; tiles[idx].classList.add('drop-anim'); });
             setTimeout(() => {
                 let matchResult = findMatches(gridState);
-                if (matchResult.indices.length > 0) {
-                    processMatches(matchResult);
-                } else {
-                    if (!hasPossibleMoves()) shuffleBoard();
-                    else {
-                        isLocked = false;
-                        resetHintTimer();
-                    }
-                }
+                if (matchResult.indices.length > 0) { processMatches(matchResult); } 
+                else { if (!hasPossibleMoves()) shuffleBoard(); else { isLocked = false; resetHintTimer(); } }
             }, 500);
         }
-
         function hasPossibleMoves() {
-            for (let r=0; r<width; r++) {
-                for (let c=0; c<width-1; c++) {
-                    let idx = r*width + c;
-                    if(trySwap(idx, idx+1)) return true;
-                }
-            }
-            for (let c=0; c<width; c++) {
-                for (let r=0; r<width-1; r++) {
-                    let idx = r*width + c;
-                    if(trySwap(idx, idx+width)) return true;
-                }
-            }
+            for (let r=0; r<width; r++) { for (let c=0; c<width-1; c++) { let idx = r*width + c; if(trySwap(idx, idx+1)) return true; } }
+            for (let c=0; c<width; c++) { for (let r=0; r<width-1; r++) { let idx = r*width + c; if(trySwap(idx, idx+width)) return true; } }
             for(let i=0; i<gridState.length; i++) if(gridState[i].power) return true;
             return false;
         }
-
         function trySwap(i, j) {
             let t = gridState[i]; gridState[i] = gridState[j]; gridState[j] = t;
             let hasMatch = findMatches(gridState).indices.length > 0;
             t = gridState[i]; gridState[i] = gridState[j]; gridState[j] = t;
             return hasMatch;
         }
-
         function shuffleBoard() {
-            isLocked = true;
-            document.getElementById('shuffle-msg').style.display = 'block';
-            stopHintTimer();
+            isLocked = true; document.getElementById('shuffle-msg').style.display = 'block'; stopHintTimer();
             setTimeout(() => {
                 let attempts = 0;
                 do {
-                    for (let i = gridState.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [gridState[i], gridState[j]] = [gridState[j], gridState[i]];
-                    }
+                    for (let i = gridState.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [gridState[i], gridState[j]] = [gridState[j], gridState[i]]; }
                     if (findMatches(gridState).indices.length > 0) gridState = gridState.map(() => createNewTile());
                     attempts++;
                 } while (!hasPossibleMoves() && attempts < 100);
                 renderBoard();
-                const tiles = document.querySelectorAll('.tile');
-                tiles.forEach(t => t.classList.add('shuffle-anim'));
-                setTimeout(() => {
-                    tiles.forEach(t => t.classList.remove('shuffle-anim'));
-                    document.getElementById('shuffle-msg').style.display = 'none';
-                    isLocked = false;
-                    resetHintTimer();
-                }, 500);
+                const tiles = document.querySelectorAll('.tile'); tiles.forEach(t => t.classList.add('shuffle-anim'));
+                setTimeout(() => { tiles.forEach(t => t.classList.remove('shuffle-anim')); document.getElementById('shuffle-msg').style.display = 'none'; isLocked = false; resetHintTimer(); }, 500);
             }, 1000);
         }
-
         function getRandomFood() { return candyColors[Math.floor(Math.random() * candyColors.length)]; }
         function showFloatText(text, index) {
-            const tiles = document.querySelectorAll('.tile');
-            if(!tiles[index]) return;
-            const rect = tiles[index].getBoundingClientRect();
-            const floater = document.createElement('div');
+            const tiles = document.querySelectorAll('.tile'); if(!tiles[index]) return;
+            const rect = tiles[index].getBoundingClientRect(); const floater = document.createElement('div');
             floater.classList.add('floater'); floater.innerText = text;
             floater.style.left = (rect.left + 10) + 'px'; floater.style.top = (rect.top) + 'px';
-            document.body.appendChild(floater);
-            setTimeout(() => floater.remove(), 1000);
+            document.body.appendChild(floater); setTimeout(() => floater.remove(), 1000);
         }
         function logMsg(msg, color) {
-            const log = document.getElementById('console-log');
-            log.innerText = msg; log.style.color = color;
+            const log = document.getElementById('console-log'); log.innerText = msg; log.style.color = color;
             setTimeout(() => { log.style.color = "#8b9bb4"; log.innerText = "Master food to boost score!"; }, 3000);
         }
         function updateUI() {
-            document.getElementById('score-display').innerText = score;
-            document.getElementById('level-display').innerText = level;
+            document.getElementById('score-display').innerText = score; document.getElementById('level-display').innerText = level;
             document.getElementById('xp-bar').style.width = Math.min(100, (currentXP / xpToNextLevel) * 100) + '%';
         }
     </script>
