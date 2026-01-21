@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#2c2137">
-    <title>Pixel Feast Quest: Fixed Chains</title>
+    <title>Pixel Feast: Transformations</title>
     
     <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -163,6 +163,7 @@
         .pop-anim { animation: explode 0.3s forwards cubic-bezier(0.25, 1, 0.5, 1); }
         .drop-anim { animation: fallDown 0.5s ease-out; z-index: 5; }
         .shuffle-anim { animation: spin 0.5s ease-in-out; }
+        
         .hint-anim {
             z-index: 3;
             box-shadow: inset 0 0 0 4px #fff, 0 0 15px #fff !important;
@@ -281,9 +282,7 @@
                 for (let i = 0; i < width * width; i++) {
                     const square = document.createElement('div');
                     square.classList.add('tile'); square.setAttribute('id', `tile-${i}`);
-                    square.addEventListener('pointerdown', (e) => { 
-                        AudioSys.init(); e.preventDefault(); handleInput(i); 
-                    });
+                    square.addEventListener('pointerdown', (e) => { AudioSys.init(); e.preventDefault(); handleInput(i); });
                     gridElement.appendChild(square);
                 }
             }
@@ -338,25 +337,105 @@
             const tile1 = gridState[idx1]; const tile2 = gridState[idx2];
             AudioSys.play('select');
             
-            // --- POWER UP ACTIVATION ---
+            // --- CHECK FOR SUPER COMBOS & POWER UPS ---
             if (tile1.power || tile2.power) {
-                // Determine initial Swap Direction
                 let swapDir = Math.abs(idx1 - idx2) === 1 ? 'horz' : 'vert';
-                
-                // Swap state
                 gridState[idx1] = tile2; gridState[idx2] = tile1; updateVisuals();
                 
                 let exploded = new Set();
-                let detonated = new Set(); // Tracks powerups that have fired to prevent loops
+                let detonated = new Set();
                 
-                // Trigger both involved tiles
-                if (tile1.power) triggerPowerUp(idx2, tile1, tile2, exploded, detonated, swapDir);
-                if (tile2.power) triggerPowerUp(idx1, tile2, tile1, exploded, detonated, swapDir);
+                // SUPER COMBOS
+                if (tile1.power && tile2.power) {
+                    AudioSys.play('levelup'); 
+                    
+                    // 1. CAKE + CAKE = NUKE
+                    if (tile1.power === 'sushi' && tile2.power === 'sushi') {
+                        for(let i=0; i<width*width; i++) checkChainHit(i, exploded, detonated, swapDir);
+                    }
+                    // 2. CAKE + TACO (TRANSFORM TO TACOS)
+                    else if ((tile1.power === 'sushi' && tile2.power === 'taco') || (tile1.power === 'taco' && tile2.power === 'sushi')) {
+                        let targets = gridState.filter(t => t.food).map(t => t.food);
+                        if(targets.length > 0) {
+                            let targetFood = targets[Math.floor(Math.random() * targets.length)];
+                            for(let i=0; i<width*width; i++) {
+                                if(gridState[i] && gridState[i].food === targetFood) {
+                                    gridState[i].power = 'taco';
+                                    checkChainHit(i, exploded, detonated, swapDir);
+                                }
+                            }
+                            updateVisuals(); // Show transformations
+                        }
+                        checkChainHit(idx1, exploded, detonated, swapDir);
+                        checkChainHit(idx2, exploded, detonated, swapDir);
+                    }
+                    // 3. CAKE + BREAD (TRANSFORM TO BREADS)
+                    else if ((tile1.power === 'sushi' && tile2.power === 'bread') || (tile1.power === 'bread' && tile2.power === 'sushi')) {
+                        let targets = gridState.filter(t => t.food).map(t => t.food);
+                        if(targets.length > 0) {
+                            let targetFood = targets[Math.floor(Math.random() * targets.length)];
+                            for(let i=0; i<width*width; i++) {
+                                if(gridState[i] && gridState[i].food === targetFood) {
+                                    gridState[i].power = 'bread';
+                                    checkChainHit(i, exploded, detonated, swapDir);
+                                }
+                            }
+                            updateVisuals(); // Show transformations
+                        }
+                        checkChainHit(idx1, exploded, detonated, swapDir);
+                        checkChainHit(idx2, exploded, detonated, swapDir);
+                    }
+                    // 4. TACO + TACO = 3 LINES
+                    else if (tile1.power === 'taco' && tile2.power === 'taco') {
+                        if (swapDir === 'horz') {
+                            const r = Math.floor(idx2 / width);
+                            for(let i=(r-1)*width; i<(r+2)*width; i++) {
+                                if(i>=0 && i<width*width) checkChainHit(i, exploded, detonated, swapDir);
+                            }
+                        } else {
+                            const c = idx2 % width;
+                            for(let offset=-1; offset<=1; offset++) {
+                                let tc = c + offset;
+                                if(tc>=0 && tc<width) {
+                                    for(let i=tc; i<width*width; i+=width) checkChainHit(i, exploded, detonated, swapDir);
+                                }
+                            }
+                        }
+                    }
+                    // 5. BREAD + BREAD = GIANT CROSS
+                    else if (tile1.power === 'bread' && tile2.power === 'bread') {
+                        const r = Math.floor(idx2 / width); const c = idx2 % width;
+                        for(let i=(r-1)*width; i<(r+2)*width; i++) if(i>=0 && i<width*width) checkChainHit(i, exploded, detonated, 'horz');
+                        for(let offset=-1; offset<=1; offset++) {
+                            let tc = c + offset;
+                            if(tc>=0 && tc<width) {
+                                for(let i=tc; i<width*width; i+=width) checkChainHit(i, exploded, detonated, 'vert');
+                            }
+                        }
+                    }
+                    // 6. BREAD + TACO = STAR (Cross + X)
+                    else {
+                        const r = Math.floor(idx2 / width); const c = idx2 % width;
+                        for(let i=r*width; i<(r+1)*width; i++) checkChainHit(i, exploded, detonated, 'horz');
+                        for(let i=c; i<width*width; i+=width) checkChainHit(i, exploded, detonated, 'vert');
+                        let x = c, y = r;
+                        while(x>0 && y>0) { x--; y--; }
+                        while(x<width && y<width) { checkChainHit(y*width+x, exploded, detonated, 'horz'); x++; y++; }
+                        x = c; y = r;
+                        while(x<width-1 && y>0) { x++; y--; }
+                        while(x>=0 && y<width) { checkChainHit(y*width+x, exploded, detonated, 'horz'); x--; y++; }
+                    }
+                } 
+                // STANDARD POWER UP
+                else {
+                    if (tile1.power) triggerPowerUp(idx2, tile1, tile2, exploded, detonated, swapDir);
+                    if (tile2.power) triggerPowerUp(idx1, tile2, tile1, exploded, detonated, swapDir);
+                    AudioSys.play('powerup');
+                }
                 
-                AudioSys.play('powerup'); runClearSequence(Array.from(exploded)); return;
+                runClearSequence(Array.from(exploded)); return;
             }
 
-            // Normal Match Logic
             gridState[idx1] = tile2; gridState[idx2] = tile1; updateVisuals();
             setTimeout(() => {
                 const matchResult = findMatches(gridState);
@@ -368,40 +447,29 @@
             }, 200);
         }
 
-        // --- ROBUST CHAIN REACTION ENGINE ---
         function triggerPowerUp(originIdx, powerTile, targetTile, set, detonated, direction) {
-            if (detonated.has(originIdx)) return; // Prevent double firing
-            detonated.add(originIdx);
-            set.add(originIdx); // Mark self for clearing
+            if (detonated.has(originIdx)) return; 
+            detonated.add(originIdx); set.add(originIdx);
 
             const r = Math.floor(originIdx / width);
             const c = originIdx % width;
             let dir = direction || 'horz';
 
-            // 1. TACO: Directional Blast
             if (powerTile.power === 'taco') {
                 if (dir === 'vert') {
-                    // Vertical Blast (Column)
                     for(let i=c; i<width*width; i+=width) checkChainHit(i, set, detonated, 'vert');
                 } else {
-                    // Horizontal Blast (Row)
                     for(let i=r*width; i<(r+1)*width; i++) checkChainHit(i, set, detonated, 'horz');
                 }
-            } 
-            // 2. BREAD: Cross Blast
-            else if (powerTile.power === 'bread') {
+            } else if (powerTile.power === 'bread') {
                 for(let i=r*width; i<(r+1)*width; i++) checkChainHit(i, set, detonated, 'horz');
                 for(let i=c; i<width*width; i+=width) checkChainHit(i, set, detonated, 'vert');
-            } 
-            // 3. CAKE (Sushi): Color Wipe
-            else if (powerTile.power === 'sushi') { // 'sushi' is the internal ID for Cake
+            } else if (powerTile.power === 'sushi') {
                 let targetFood = targetTile.food;
-                // If Cake is hit by a blast (no swap target), pick a random existing food
                 if (!targetFood) {
                     let candidates = gridState.filter(t => t && t.food).map(t => t.food);
                     if(candidates.length > 0) targetFood = candidates[Math.floor(Math.random() * candidates.length)];
                 }
-                
                 if(targetFood) {
                     for(let i=0; i<width*width; i++) { 
                         if(gridState[i] && gridState[i].food === targetFood) checkChainHit(i, set, detonated, 'horz'); 
@@ -411,22 +479,13 @@
         }
 
         function checkChainHit(idx, set, detonated, incomingDir) {
-            if(set.has(idx)) return; // Already cleared
-            if(!gridState[idx]) return;
+            if(set.has(idx)) return; if(!gridState[idx]) return;
+            set.add(idx);
             
-            set.add(idx); // Clear this tile
-            
-            // If the hit tile is ALSO a powerup, chain it!
             if (gridState[idx].power) {
                 let nextDir = incomingDir;
-                // If we hit a TACO, we FLIP the direction (Perpendicular Chain)
-                if (gridState[idx].power === 'taco') {
-                    nextDir = (incomingDir === 'horz') ? 'vert' : 'horz';
-                }
-                // If hitting a CAKE/BREAD, incomingDir doesn't strictly matter as they handle it, but we pass it anyway
-                
-                // Recursively fire the hit powerup
-                triggerPowerUp(idx, gridState[idx], { food: null }, set, detonated, nextDir);
+                if (gridState[idx].power === 'taco') nextDir = (incomingDir === 'horz') ? 'vert' : 'horz';
+                triggerPowerUp(idx, gridState[idx], { food: null, power: true }, set, detonated, nextDir);
             }
         }
 
