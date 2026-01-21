@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#2c2137">
-    <title>Pixel Feast Quest: Bread Update</title>
+    <title>Pixel Feast Quest: Chain Reactions</title>
     
     <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -155,8 +155,6 @@
         /* --- POWER UP STYLES --- */
         .tile.power-taco { background-color: #ff7e47 !important; box-shadow: inset 0 0 10px #7a1c00; border: 2px solid #ffcc00; }
         .tile.power-sushi { background-color: #ffd700 !important; box-shadow: inset 0 0 10px #8b6914; animation: pulse-gold 1s infinite; }
-        
-        /* Bread Style (Golden Brown) */
         .tile.power-bread { background-color: #d4a373 !important; box-shadow: inset 0 0 10px #8b4513; border: 2px solid #fff; }
 
         @media (min-aspect-ratio: 1/1) and (min-width: 600px) {
@@ -215,16 +213,10 @@
     </div>
 
     <script>
-        // --- PWA SERVICE WORKER REGISTRATION ---
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('SW Registered'))
-                    .catch(err => console.log('SW Error:', err));
-            });
+            window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(err => {}); });
         }
 
-        // --- AUDIO SYSTEM ---
         const AudioSys = {
             ctx: null,
             init: function() {
@@ -267,7 +259,6 @@
             }
         };
 
-        // --- GAME VARIABLES ---
         const width = 8;
         const candyColors = ['🍔', '🍕', '🍪', '🍩', '🍟', '🍗'];
         let gridState = [];
@@ -302,9 +293,7 @@
                 for (let i = 0; i < width * width; i++) {
                     const square = document.createElement('div');
                     square.classList.add('tile'); square.setAttribute('id', `tile-${i}`);
-                    square.addEventListener('pointerdown', (e) => { 
-                        AudioSys.init(); e.preventDefault(); handleInput(i); 
-                    });
+                    square.addEventListener('pointerdown', (e) => { AudioSys.init(); e.preventDefault(); handleInput(i); });
                     gridElement.appendChild(square);
                 }
             }
@@ -319,7 +308,6 @@
                 
                 if (data.power === 'taco') { el.innerHTML = '🌮'; el.classList.add('power-taco'); } 
                 else if (data.power === 'sushi') { el.innerHTML = '🎂'; el.classList.add('power-sushi'); } 
-                // UPDATED MILK TO BREAD
                 else if (data.power === 'bread') { el.innerHTML = '🍞'; el.classList.add('power-bread'); } 
                 else { el.innerHTML = data.food; }
             }
@@ -360,15 +348,16 @@
             const tile1 = gridState[idx1]; const tile2 = gridState[idx2];
             AudioSys.play('select');
             
-            // --- POWER UP & CHAIN LOGIC ---
             if (tile1.power || tile2.power) {
                 let swapDir = Math.abs(idx1 - idx2) === 1 ? 'horz' : 'vert';
                 gridState[idx1] = tile2; gridState[idx2] = tile1; updateVisuals();
-                let exploded = new Set();
                 
-                // Pass the swap direction to collectExplosion
-                if (tile1.power) collectExplosion(idx2, tile1, tile2, exploded, swapDir);
-                if (tile2.power) collectExplosion(idx1, tile2, tile1, exploded, swapDir);
+                let exploded = new Set();
+                let detonated = new Set(); // Prevent infinite loops in chains
+                
+                // Pass swapDir. If tile1 is Taco, it uses swapDir. If tile2 is Taco, it uses swapDir.
+                if (tile1.power) collectExplosion(idx2, tile1, tile2, exploded, detonated, swapDir);
+                if (tile2.power) collectExplosion(idx1, tile2, tile1, exploded, detonated, swapDir);
                 
                 AudioSys.play('powerup'); runClearSequence(Array.from(exploded)); return;
             }
@@ -384,54 +373,54 @@
             }, 200);
         }
 
-        // --- NEW RECURSIVE CHAIN LOGIC ---
-        function collectExplosion(originIdx, powerTile, targetTile, set, direction) {
-            if (set.has(originIdx)) return;
+        // --- FIXED CHAIN REACTION LOGIC ---
+        function collectExplosion(originIdx, powerTile, targetTile, set, detonated, direction) {
+            // Stop if this specific tile has already fired its payload
+            if (detonated.has(originIdx)) return;
+            detonated.add(originIdx);
+            
+            // Mark self for clearing
             set.add(originIdx);
             
             const r = Math.floor(originIdx / width);
             const c = originIdx % width;
-            let dir = direction || 'horz'; // Default to horizontal if undefined
+            let dir = direction || 'horz';
 
             if (powerTile.power === 'taco') {
                 if (dir === 'vert') {
-                    // Clear Column (and cascade vertically)
-                    for(let i=c; i<width*width; i+=width) checkCascade(i, set, 'vert');
+                    for(let i=c; i<width*width; i+=width) checkCascade(i, set, detonated, 'vert');
                 } else {
-                    // Clear Row (and cascade horizontally)
-                    for(let i=r*width; i<(r+1)*width; i++) checkCascade(i, set, 'horz');
+                    for(let i=r*width; i<(r+1)*width; i++) checkCascade(i, set, detonated, 'horz');
                 }
             } else if (powerTile.power === 'bread') {
-                // Clear Row (Horz) & Col (Vert)
-                for(let i=r*width; i<(r+1)*width; i++) checkCascade(i, set, 'horz');
-                for(let i=c; i<width*width; i+=width) checkCascade(i, set, 'vert');
+                for(let i=r*width; i<(r+1)*width; i++) checkCascade(i, set, detonated, 'horz');
+                for(let i=c; i<width*width; i+=width) checkCascade(i, set, detonated, 'vert');
             } else if (powerTile.power === 'sushi') {
                 let targetFood = targetTile.food;
-                // If hit by chain, pick RANDOM food
                 if (!targetFood && targetTile.power) targetFood = getRandomFood(); 
                 
                 for(let i=0; i<width*width; i++) { 
-                    if(gridState[i] && gridState[i].food === targetFood) checkCascade(i, set, 'horz'); 
+                    if(gridState[i] && gridState[i].food === targetFood) checkCascade(i, set, detonated, 'horz'); 
                 }
             }
         }
 
-        function checkCascade(idx, set, incomingDir) {
-            if(set.has(idx)) return;
-            if(!gridState[idx]) return;
+        function checkCascade(idx, set, detonated, incomingDir) {
+            // Always mark for clearing
             set.add(idx);
             
-            // If we hit another powerup, TRIGGER CHAIN
+            if(!gridState[idx]) return;
+            
+            // If it's a powerup, trigger it immediately!
             if (gridState[idx].power) {
                 let nextDir = incomingDir;
-                // IF we hit a Taco, we FLIP the direction for perpendicular chaos
+                // If Taco gets hit, it explodes PERPENDICULAR to the hit
                 if (gridState[idx].power === 'taco') {
                     nextDir = (incomingDir === 'horz') ? 'vert' : 'horz';
                 }
                 
-                // Pass a dummy target since it wasn't a swap
                 let dummyTarget = { food: null, power: true };
-                collectExplosion(idx, gridState[idx], dummyTarget, set, nextDir);
+                collectExplosion(idx, gridState[idx], dummyTarget, set, detonated, nextDir);
             }
         }
 
