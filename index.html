@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#2c2137">
-    <title>Pixel Feast: Patch</title>
+    <title>Pixel Feast: Countdown</title>
     
     <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -151,6 +151,17 @@
         .m-bar-fill { height: 100%; background: #d46eb3; width: 0%; }
         .m-lvl { color: #ffff00; font-size: 10px; position: absolute; top: -14px; right: 0; }
 
+        /* --- COUNTDOWN OVERLAY --- */
+        #countdown-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; align-items: center; justify-content: center;
+            font-size: clamp(60px, 15vw, 120px); color: #fff;
+            text-shadow: 6px 6px 0 #000; z-index: 300;
+            pointer-events: none;
+        }
+        .count-anim { animation: scaleDown 0.8s ease-out forwards; }
+        @keyframes scaleDown { 0% { transform: scale(1.5); opacity: 0; } 50% { opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+
         .tile.power-taco { background-color: #ff7e47 !important; box-shadow: inset 0 0 10px #7a1c00; border: 2px solid #ffcc00; }
         .tile.power-sushi { background-color: #ffd700 !important; box-shadow: inset 0 0 10px #8b6914; animation: pulse-gold 1s infinite; }
         .tile.power-bread { background-color: #d4a373 !important; box-shadow: inset 0 0 10px #8b4513; border: 2px solid #fff; }
@@ -185,7 +196,7 @@
             background: rgba(0,0,0,0.9); 
             color: #fff; padding: 20px; 
             border: 4px solid var(--border-light); 
-            display: none; z-index: 500; /* High Z-Index */
+            display: none; z-index: 500; 
             font-size: clamp(14px, 4vw, 20px); 
             text-align: center; pointer-events: none; 
             box-shadow: 0 0 20px #000;
@@ -216,6 +227,8 @@
     <div class="game-board" id="grid">
         <div id="shuffle-msg">NO MOVES!<br>SHUFFLING...</div>
     </div>
+
+    <div id="countdown-overlay"></div>
 
     <div id="modal-overlay">
         <div class="modal-content">
@@ -263,6 +276,7 @@
         const masteryGridElement = document.getElementById('mastery-grid');
         const modalOverlay = document.getElementById('modal-overlay');
         const mainMenu = document.getElementById('main-menu');
+        const countdownOverlay = document.getElementById('countdown-overlay');
 
         document.addEventListener('DOMContentLoaded', () => { 
             document.getElementById('stats-btn').addEventListener('click', () => { showMasteryModal(); AudioSys.play('select'); });
@@ -274,9 +288,49 @@
             mainMenu.style.display = 'none';
             score = 0; level = 1; currentXP = 0; xpToNextLevel = 100;
             masteryData = {}; candyColors.forEach(food => { masteryData[food] = { level: 1, current: 0, max: 20 }; });
-            if (mode === 'TIME') { timeRemaining = 120; document.getElementById('bar-fill').style.backgroundColor = '#4da6ff'; startTimer(); } 
-            else { document.getElementById('bar-fill').style.backgroundColor = '#5ac54f'; }
-            initBoard(); updateUI();
+            
+            initBoard(); 
+            updateUI();
+
+            if (mode === 'TIME') { 
+                timeRemaining = 120; 
+                document.getElementById('bar-fill').style.backgroundColor = '#4da6ff'; 
+                // Start Countdown
+                isLocked = true;
+                runCountdown();
+            } else { 
+                document.getElementById('bar-fill').style.backgroundColor = '#5ac54f'; 
+            }
+        }
+
+        function runCountdown() {
+            countdownOverlay.style.display = 'flex';
+            let count = 3;
+            
+            const tick = () => {
+                if (count > 0) {
+                    countdownOverlay.innerText = count;
+                    countdownOverlay.className = ''; // reset
+                    void countdownOverlay.offsetWidth; // reflow
+                    countdownOverlay.className = 'count-anim';
+                    AudioSys.playNote(440, AudioSys.ctx.currentTime, 0.1); // Low Beep
+                    count--;
+                    setTimeout(tick, 1000);
+                } else if (count === 0) {
+                    countdownOverlay.innerText = "GO!";
+                    countdownOverlay.className = '';
+                    void countdownOverlay.offsetWidth;
+                    countdownOverlay.className = 'count-anim';
+                    AudioSys.playNote(880, AudioSys.ctx.currentTime, 0.3); // High Beep
+                    count--;
+                    setTimeout(tick, 1000);
+                } else {
+                    countdownOverlay.style.display = 'none';
+                    isLocked = false;
+                    startTimer();
+                }
+            };
+            tick();
         }
 
         function startTimer() {
@@ -311,10 +365,13 @@
         function initBoard() {
             gridState = []; for (let i = 0; i < width * width; i++) gridState.push(createNewTile());
             let settling = true;
-            while(settling) { if (findMatches(gridState).indices.length > 0) { gridState = gridState.map(() => createNewTile()); } else { settling = false; } }
+            while(settling) {
+                if (findMatches(gridState).indices.length > 0) { gridState = gridState.map(() => createNewTile()); } 
+                else { settling = false; }
+            }
             renderBoard();
             if (!hasPossibleMoves()) shuffleBoard();
-            else resetHintTimer();
+            else if (gameMode !== 'TIME') resetHintTimer(); // Don't hint during countdown
         }
 
         function createNewTile(fixedFood) { return { food: fixedFood || getRandomFood(), power: null }; }
@@ -348,6 +405,10 @@
                 item.innerHTML = `<span class="m-icon">${food}</span><div class="m-bar-container"><div class="m-bar-fill" id="m-bar-${food}" style="width:${pct}%"></div><span class="m-lvl" id="m-lvl-${food}">v${m.level}</span></div>`;
                 masteryGridElement.appendChild(item);
             });
+        }
+        function updateMasteryProgress(food) {
+            const m = masteryData[food]; const bar = document.getElementById(`m-bar-${food}`); const lvl = document.getElementById(`m-lvl-${food}`);
+            if(bar && lvl) { let pct = Math.min(100, (m.current / m.max) * 100); bar.style.width = `${pct}%`; lvl.innerText = `v${m.level}`; }
         }
         function handleInput(index) {
             if (isLocked) return;
@@ -451,6 +512,18 @@
                 if (gridState[idx].power === 'taco') nextDir = (incomingDir === 'horz') ? 'vert' : 'horz';
                 triggerPowerUp(idx, gridState[idx], { food: null, power: true }, set, detonated, nextDir);
             }
+        }
+
+        function resetHintTimer() { clearTimeout(hintTimeout); clearHints(); if(!isLocked) hintTimeout = setTimeout(showHint, HINT_DELAY); }
+        function stopHintTimer() { clearTimeout(hintTimeout); clearHints(); }
+        function clearHints() { document.querySelectorAll('.tile').forEach(t => t.classList.remove('hint-anim')); }
+        function showHint() {
+            if(isLocked) return;
+            let possibleMoves = [];
+            for (let r=0; r<width; r++) { for (let c=0; c<width-1; c++) { let idx = r*width + c; if(trySwap(idx, idx+1)) possibleMoves.push([idx, idx+1]); } }
+            for (let c=0; c<width; c++) { for (let r=0; r<width-1; r++) { let idx = r*width + c; if(trySwap(idx, idx+width)) possibleMoves.push([idx, idx+width]); } }
+            for(let i=0; i<gridState.length; i++) { if(gridState[i].power) { if (i+1 < width*width && i%width !== 7) possibleMoves.push([i, i+1]); if (i+width < width*width) possibleMoves.push([i, i+width]); } }
+            if (possibleMoves.length > 0) { let move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)]; const tiles = document.querySelectorAll('.tile'); tiles[move[0]].classList.add('hint-anim'); tiles[move[1]].classList.add('hint-anim'); }
         }
 
         function findMatches(state) {
